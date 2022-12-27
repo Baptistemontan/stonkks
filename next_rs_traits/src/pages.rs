@@ -6,10 +6,10 @@ use sycamore::prelude::*;
 use super::predule::*;
 
 pub trait BasePage {
-    type Route: Route;
+    type Route<'a>: Route<'a>;
     type Props: Send;
 
-    fn try_match_route(url_infos: &UrlInfos) -> Option<Self::Route> {
+    fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
         Self::Route::try_from_url(url_infos)
     }
 
@@ -20,7 +20,7 @@ pub mod pages_ptr {
     use std::sync::atomic::AtomicPtr;
     use super::BasePage;
 
-    pub type RouteCastedPtr<T> = * mut <T as BasePage>::Route;
+    pub type RouteCastedPtr<'a, T> = * mut <T as BasePage>::Route<'a>;
     pub type PropsCastedPtr<T> = * mut <T as BasePage>::Props;
     
     pub type UntypedPtr = * mut ();
@@ -73,7 +73,7 @@ impl<T: BasePage> DynBasePage for T {
 
 #[async_trait]
 pub trait DynPage: BasePage + Sync {
-    async fn get_server_props(route: Self::Route) -> Self::Props;
+    async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
 }
 
 #[async_trait]
@@ -106,8 +106,8 @@ mod test {
 
     struct MyRoute;
 
-    impl Route for MyRoute {
-        fn try_from_url(url: &UrlInfos) -> Option<Self> {
+    impl<'a> Route<'a> for MyRoute {
+        fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
             let mut iter = url.segments().iter();
 
             match (iter.next(), iter.next()) {
@@ -118,7 +118,7 @@ mod test {
     }
 
     impl BasePage for MyPage {
-        type Route = MyRoute;
+        type Route<'a> = MyRoute;
 
         type Props = ();
 

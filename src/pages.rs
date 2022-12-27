@@ -62,15 +62,15 @@ mod test {
 
     struct MyPage;
 
-    struct MyRoute(String);
+    struct MyRoute<'a>(&'a str);
 
-    impl Route for MyRoute {
-        fn try_from_url(url: &UrlInfos) -> Option<Self> {
+    impl<'a> Route<'a> for MyRoute<'a> {
+        fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
             let mut iter = url.segments().iter();
 
             match (iter.next(), iter.next(), iter.next()) {
                 (Some(value), Some(greeting), None) if value == &"index" => {
-                    Some(MyRoute(greeting.to_string()))
+                    Some(MyRoute(greeting))
                 }
                 _ => None,
             }
@@ -78,7 +78,7 @@ mod test {
     }
 
     impl BasePage for MyPage {
-        type Route = MyRoute;
+        type Route<'a> = MyRoute<'a>;
 
         type Props = String;
 
@@ -93,8 +93,8 @@ mod test {
 
     #[async_trait]
     impl DynPage for MyPage {
-        async fn get_server_props(route: Self::Route) -> Self::Props {
-            route.0
+        async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props {
+            route.0.to_string()
         }
     }
 

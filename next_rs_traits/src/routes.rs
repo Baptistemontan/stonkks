@@ -1,7 +1,7 @@
 use std::{collections::HashMap, ops::Deref};
 
-pub trait Route: Sized + Send {
-    fn try_from_url(url: &UrlInfos) -> Option<Self>;
+pub trait Route<'a>: Sized + Send + 'a {
+    fn try_from_url(url: &UrlInfos<'a>) -> Option<Self>;
 }
 
 #[repr(transparent)]
