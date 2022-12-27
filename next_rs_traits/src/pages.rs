@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 // use sycamore::{reactive::Scope, view::View};
-use std::sync::atomic::AtomicPtr;
 use sycamore::prelude::*;
 
 use super::predule::*;
@@ -17,19 +16,87 @@ pub trait BasePage {
 }
 
 pub mod pages_ptr {
-    use std::sync::atomic::AtomicPtr;
     use super::BasePage;
 
-    pub type RouteCastedPtr<'a, T> = * mut <T as BasePage>::Route<'a>;
-    pub type PropsCastedPtr<T> = * mut <T as BasePage>::Props;
-    
-    pub type UntypedPtr = * mut ();
-    pub type RouteDynPtr = UntypedPtr;
-    pub type PropsDynPtr = UntypedPtr;
-    
-    pub type UntypedSendPtr = AtomicPtr<()>;
-    pub type RouteDynSendPtr = UntypedSendPtr;
-    pub type PropsDynSendPtr = UntypedSendPtr;
+    // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
+    // because they can only be created by either consuming one another
+    // or by consumming the value, boxing it and then leaking the box, taking exclusive ownership of the pointer.
+    // They are finally consummed when converting to the inner type.
+    // They are made for moving data in a untyped, unlifetimed(?) maner for props and routes.
+
+    // TODO: implement drop for them and deallocating the box in case it is dropped without being consummed
+    // (early return, panic, future cancelling, ect...)
+    // and use mem::forget when consuming.
+
+    // Route ptr wrapper:
+
+    pub struct RouteCastedPtr<'a, T: BasePage>(* mut T::Route<'a>);
+    pub struct RouteUntypedPtr(* mut ());
+
+    impl<'a, T: BasePage> From<RouteUntypedPtr> for RouteCastedPtr<'a, T> {
+        fn from(RouteUntypedPtr(route_ptr): RouteUntypedPtr) -> Self {
+            RouteCastedPtr(route_ptr as * mut _)
+        }
+    } 
+
+    impl<'a, T: BasePage> RouteCastedPtr<'a, T> {
+        pub unsafe fn into_inner(self) -> T::Route<'a> {
+            let route = Box::from_raw(self.0);
+            *route
+        }
+    }
+
+    unsafe impl<'a, T: BasePage> Send for RouteCastedPtr<'a, T> {}
+
+    impl RouteUntypedPtr {
+        pub fn new<'a, T: BasePage>(route: T::Route<'a>) -> Self {
+            let boxed_route = Box::new(route);
+            let ptr = Box::leak(boxed_route) as * mut _ as * mut ();
+            RouteUntypedPtr(ptr)
+        }
+
+        pub unsafe fn cast<'a, T: BasePage>(self) -> RouteCastedPtr<'a, T> {
+            self.into()
+        }
+    }
+
+    unsafe impl Send for RouteUntypedPtr {}
+
+    // Props ptr wrapper:
+
+    pub struct PropsCastedPtr<T: BasePage>(pub * mut T::Props);
+    pub struct PropsUntypedPtr(pub * mut ());
+
+    impl<T: BasePage> From<PropsUntypedPtr> for PropsCastedPtr<T> {
+        fn from(PropsUntypedPtr(props_ptr): PropsUntypedPtr) -> Self {
+            PropsCastedPtr(props_ptr as * mut _)
+        }
+    } 
+
+    impl<T: BasePage> PropsCastedPtr<T> {
+        pub unsafe fn into_inner(self) -> T::Props {
+            let props = Box::from_raw(self.0);
+            *props
+        }
+    }
+
+    unsafe impl<T: BasePage> Send for PropsCastedPtr<T> {}
+
+    impl PropsUntypedPtr {
+        pub fn new<T: BasePage>(props: T::Props) -> Self {
+            let boxed_props = Box::new(props);
+            let ptr = Box::leak(boxed_props) as * mut _ as * mut ();
+            PropsUntypedPtr(ptr)
+        }
+
+        pub unsafe fn cast<T: BasePage>(self) -> PropsCastedPtr<T> {
+            self.into()
+        }
+    }
+
+    unsafe impl Send for PropsUntypedPtr {}
+
+
 }
 
 use pages_ptr::*;
@@ -37,37 +104,35 @@ use pages_ptr::*;
 
 
 pub trait DynBasePage {
-    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteDynPtr>;
-    unsafe fn render_client(&self, cx: Scope, props: PropsDynPtr) -> View<DomNode>;
-    unsafe fn render_server(&self, cx: Scope, props: PropsDynPtr) -> View<SsrNode>;
-    unsafe fn hydrate(&self, cx: Scope, props: PropsDynPtr) -> View<HydrateNode>;
+    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
+    unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> View<DomNode>;
+    unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> View<SsrNode>;
+    unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> View<HydrateNode>;
 }
 
 impl<T: BasePage> DynBasePage for T {
-    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteDynPtr> {
+    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr> {
         let route = <T as BasePage>::try_match_route(url_infos)?;
-        let route = Box::new(route);
-        
-        let route = Box::leak(route) as RouteCastedPtr<T> as RouteDynPtr;
-        Some(route)
+        let route_ptr = RouteUntypedPtr::new::<T>(route);
+        Some(route_ptr)
     }
 
-    unsafe fn render_client(&self, cx: Scope, props: PropsDynPtr) -> View<DomNode> {
-        let props = props as PropsCastedPtr<T>;
-        let props = Box::from_raw(props as * mut _); 
-        <T as BasePage>::render(cx, *props)
+    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as BasePage>::render(cx, props)
     }
 
-    unsafe fn render_server(&self, cx: Scope, props: PropsDynPtr) -> View<SsrNode> {
-        let props = props as PropsCastedPtr<T>;
-        let props = Box::from_raw(props as * mut _); 
-        <T as BasePage>::render(cx, *props)
+    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as BasePage>::render(cx, props)
     }
 
-    unsafe fn hydrate(&self, cx: Scope, props: PropsDynPtr) -> View<HydrateNode> {
-        let props = props as PropsCastedPtr<T>;
-        let props = Box::from_raw(props as * mut _); 
-        <T as BasePage>::render(cx, *props)
+    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as BasePage>::render(cx, props)
     }
 }
 
@@ -78,21 +143,16 @@ pub trait DynPage: BasePage + Sync {
 
 #[async_trait]
 pub trait DynPageDyn: DynBasePage {
-    async unsafe fn get_server_props(&self, route: RouteDynSendPtr) -> PropsDynSendPtr; // IndexRoute -> IndexPageProps
+    async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr; // IndexRoute -> IndexPageProps
 }
 
 #[async_trait]
 impl<T: DynPage> DynPageDyn for T {
-    async unsafe fn get_server_props(&self, route: RouteDynSendPtr) -> PropsDynSendPtr {
-        let route = {
-            let route_ptr = route.into_inner() as RouteCastedPtr<T>;
-            let route = Box::from_raw(route_ptr);
-            *route
-        };
+    async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr {
+        let route_casted_ptr: RouteCastedPtr<T> = route_ptr.into();
+        let route = route_casted_ptr.into_inner();
         let props = <T as DynPage>::get_server_props(route).await;
-        let props = Box::new(props);
-        let props = Box::leak(props) as PropsCastedPtr<T> as UntypedPtr;
-        AtomicPtr::new(props)
+        PropsUntypedPtr::new::<T>(props)
     }
 }
 
@@ -149,7 +209,7 @@ mod test {
         }
 
         let dyn_ssr_view = render_to_string(|cx| unsafe {
-            dyn_page.render_server(cx, Box::leak(Box::new(())))
+            dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(()))
         });
         let ssr_view = render_to_string(|cx| MyPage::render(cx, ()));
 
