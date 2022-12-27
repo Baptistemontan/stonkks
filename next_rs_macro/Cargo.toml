@@ -1,0 +1,16 @@
+[package]
+name = "next_rs_macro"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+next_rs_traits = { path = "../next_rs_traits" }
+nom = "7.1.1"
+proc-macro2 = "1.0.47"
+quote = "1.0.21"
+syn = "1.0.103"
