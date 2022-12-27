@@ -1,5 +1,6 @@
 use super::prelude::*;
-use std::any::Any;
+use std::sync::atomic::AtomicPtr;
+use next_rs_traits::pages::pages_ptr::*;
 
 #[derive(Default)]
 pub struct Pages {
@@ -14,10 +15,12 @@ impl Pages {
     pub fn find_dyn_page_and_route<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
-    ) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any + Send>)> {
+    ) -> Option<(&'_ dyn DynPageDyn, RouteDynPtr)> {
         for page in &self.dyn_pages {
-            if let Some(route) = page.try_match_route(url_infos) {
-                return Some((&**page, route));
+            unsafe {
+                if let Some(route) = page.try_match_route(url_infos) {
+                    return Some((&**page, route));
+                }
             }
         }
         None
@@ -26,19 +29,25 @@ impl Pages {
     pub async fn find_dyn_page_and_props<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
-    ) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any>)> {
+    ) -> Option<(&'_ dyn DynPageDyn, PropsDynSendPtr)> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
-        let props = page.get_server_props(route).await;
+        let route = AtomicPtr::new(route);
+        let props = unsafe {
+            page.get_server_props(route).await
+        };
         Some((page, props))
     }
 
     pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<String> {
         let (page, props) = self.find_dyn_page_and_props(url_infos).await?;
-        let html = sycamore::render_to_string(|cx| page.render_server(cx, props));
+        let props = props.into_inner();
+        let html = sycamore::render_to_string(|cx| unsafe {
+            page.render_server(cx, props)
+        });
         Some(html)
     }
 
-    pub fn dyn_route<T: DynPage>(mut self, page: T) -> Self {
+    pub fn dyn_route<T: DynPage + 'static>(mut self, page: T) -> Self {
         self.dyn_pages.push(Box::new(page));
         self
     }

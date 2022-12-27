@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 // use sycamore::{reactive::Scope, view::View};
-use std::any::Any;
+use std::sync::atomic::AtomicPtr;
 use sycamore::prelude::*;
 
 use super::predule::*;
 
-pub trait BasePage: Any + Sized {
+pub trait BasePage {
     type Route: Route;
     type Props: Send;
 
@@ -16,37 +16,57 @@ pub trait BasePage: Any + Sized {
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
+pub mod pages_ptr {
+    use std::sync::atomic::AtomicPtr;
+    use super::BasePage;
+
+    pub type RouteCastedPtr<T> = * mut <T as BasePage>::Route;
+    pub type PropsCastedPtr<T> = * mut <T as BasePage>::Props;
+    
+    pub type UntypedPtr = * mut ();
+    pub type RouteDynPtr = UntypedPtr;
+    pub type PropsDynPtr = UntypedPtr;
+    
+    pub type UntypedSendPtr = AtomicPtr<()>;
+    pub type RouteDynSendPtr = UntypedSendPtr;
+    pub type PropsDynSendPtr = UntypedSendPtr;
+}
+
+use pages_ptr::*;
+
+
+
 pub trait DynBasePage {
-    fn try_match_route(&self, url_infos: &UrlInfos) -> Option<Box<dyn Any + Send>>;
-    fn render_client(&self, cx: Scope, props: Box<dyn Any>) -> View<DomNode>;
-    fn render_server(&self, cx: Scope, props: Box<dyn Any>) -> View<SsrNode>;
-    fn hydrate(&self, cx: Scope, props: Box<dyn Any>) -> View<HydrateNode>;
+    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteDynPtr>;
+    unsafe fn render_client(&self, cx: Scope, props: PropsDynPtr) -> View<DomNode>;
+    unsafe fn render_server(&self, cx: Scope, props: PropsDynPtr) -> View<SsrNode>;
+    unsafe fn hydrate(&self, cx: Scope, props: PropsDynPtr) -> View<HydrateNode>;
 }
 
 impl<T: BasePage> DynBasePage for T {
-    fn try_match_route(&self, url_infos: &UrlInfos) -> Option<Box<dyn Any + Send>> {
+    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteDynPtr> {
         let route = <T as BasePage>::try_match_route(url_infos)?;
-        Some(Box::new(route))
+        let route = Box::new(route);
+        
+        let route = Box::leak(route) as RouteCastedPtr<T> as RouteDynPtr;
+        Some(route)
     }
 
-    fn render_client(&self, cx: Scope, props: Box<dyn Any>) -> View<DomNode> {
-        let props = props
-            .downcast::<T::Props>()
-            .expect("An error occured when downcasting a dyn Any props");
+    unsafe fn render_client(&self, cx: Scope, props: PropsDynPtr) -> View<DomNode> {
+        let props = props as PropsCastedPtr<T>;
+        let props = Box::from_raw(props as * mut _); 
         <T as BasePage>::render(cx, *props)
     }
 
-    fn render_server(&self, cx: Scope, props: Box<dyn Any>) -> View<SsrNode> {
-        let props = props
-            .downcast::<T::Props>()
-            .expect("An error occured when downcasting a dyn Any props");
+    unsafe fn render_server(&self, cx: Scope, props: PropsDynPtr) -> View<SsrNode> {
+        let props = props as PropsCastedPtr<T>;
+        let props = Box::from_raw(props as * mut _); 
         <T as BasePage>::render(cx, *props)
     }
 
-    fn hydrate(&self, cx: Scope, props: Box<dyn Any>) -> View<HydrateNode> {
-        let props = props
-            .downcast::<T::Props>()
-            .expect("An error occured when downcasting a dyn Any props");
+    unsafe fn hydrate(&self, cx: Scope, props: PropsDynPtr) -> View<HydrateNode> {
+        let props = props as PropsCastedPtr<T>;
+        let props = Box::from_raw(props as * mut _); 
         <T as BasePage>::render(cx, *props)
     }
 }
@@ -58,17 +78,21 @@ pub trait DynPage: BasePage + Sync {
 
 #[async_trait]
 pub trait DynPageDyn: DynBasePage {
-    async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send>; // IndexRoute -> IndexPageProps
+    async unsafe fn get_server_props(&self, route: RouteDynSendPtr) -> PropsDynSendPtr; // IndexRoute -> IndexPageProps
 }
 
 #[async_trait]
 impl<T: DynPage> DynPageDyn for T {
-    async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send> {
-        let route = route
-            .downcast::<T::Route>()
-            .expect("An error occured when downcasting a dyn Any route");
-        let props = <T as DynPage>::get_server_props(*route).await;
-        Box::new(props)
+    async unsafe fn get_server_props(&self, route: RouteDynSendPtr) -> PropsDynSendPtr {
+        let route = {
+            let route_ptr = route.into_inner() as RouteCastedPtr<T>;
+            let route = Box::from_raw(route_ptr);
+            *route
+        };
+        let props = <T as DynPage>::get_server_props(route).await;
+        let props = Box::new(props);
+        let props = Box::leak(props) as PropsCastedPtr<T> as UntypedPtr;
+        AtomicPtr::new(props)
     }
 }
 
@@ -112,13 +136,21 @@ mod test {
         let page = MyPage;
         let dyn_page: Box<dyn DynBasePage> = Box::new(page);
         let url_infos = UrlInfos::parse_from_url("/about");
-        assert!(dyn_page.try_match_route(&url_infos).is_none());
+        unsafe {
+            assert!(dyn_page.try_match_route(&url_infos).is_none());
+        }
         let url_infos = UrlInfos::parse_from_url("/index/other");
-        assert!(dyn_page.try_match_route(&url_infos).is_none());
+        unsafe {
+            assert!(dyn_page.try_match_route(&url_infos).is_none());
+        }
         let url_infos = UrlInfos::parse_from_url("/index");
-        assert!(dyn_page.try_match_route(&url_infos).is_some());
+        unsafe {
+            assert!(dyn_page.try_match_route(&url_infos).is_some());
+        }
 
-        let dyn_ssr_view = render_to_string(|cx| dyn_page.render_server(cx, Box::new(())));
+        let dyn_ssr_view = render_to_string(|cx| unsafe {
+            dyn_page.render_server(cx, Box::leak(Box::new(())))
+        });
         let ssr_view = render_to_string(|cx| MyPage::render(cx, ()));
 
         assert_eq!(dyn_ssr_view, ssr_view);

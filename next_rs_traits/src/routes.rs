@@ -1,6 +1,6 @@
-use std::{any::Any, collections::HashMap, ops::Deref};
+use std::{collections::HashMap, ops::Deref};
 
-pub trait Route: Any + Sized + Send {
+pub trait Route: Sized + Send {
     fn try_from_url(url: &UrlInfos) -> Option<Self>;
 }
 
