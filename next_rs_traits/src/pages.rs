@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 // use sycamore::{reactive::Scope, view::View};
+use std::any::Any;
 use sycamore::prelude::*;
-use std::{any::Any};
 
 use super::predule::*;
 
@@ -30,20 +30,26 @@ impl<T: BasePage> DynBasePage for T {
     }
 
     fn render_client(&self, cx: Scope, props: Box<dyn Any>) -> View<DomNode> {
-        let props = props.downcast::<T::Props>().expect("An error occured when downcasting a dyn Any props");
+        let props = props
+            .downcast::<T::Props>()
+            .expect("An error occured when downcasting a dyn Any props");
         <T as BasePage>::render(cx, *props)
     }
 
     fn render_server(&self, cx: Scope, props: Box<dyn Any>) -> View<SsrNode> {
-        let props = props.downcast::<T::Props>().expect("An error occured when downcasting a dyn Any props");
+        let props = props
+            .downcast::<T::Props>()
+            .expect("An error occured when downcasting a dyn Any props");
         <T as BasePage>::render(cx, *props)
     }
 
     fn hydrate(&self, cx: Scope, props: Box<dyn Any>) -> View<HydrateNode> {
-        let props = props.downcast::<T::Props>().expect("An error occured when downcasting a dyn Any props");
+        let props = props
+            .downcast::<T::Props>()
+            .expect("An error occured when downcasting a dyn Any props");
         <T as BasePage>::render(cx, *props)
     }
-} 
+}
 
 #[async_trait]
 pub trait DynPage: BasePage + Sync {
@@ -51,14 +57,16 @@ pub trait DynPage: BasePage + Sync {
 }
 
 #[async_trait]
-pub trait DynPageDyn: DynBasePage {    
-    async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send>;  // IndexRoute -> IndexPageProps
+pub trait DynPageDyn: DynBasePage {
+    async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send>; // IndexRoute -> IndexPageProps
 }
 
 #[async_trait]
 impl<T: DynPage> DynPageDyn for T {
     async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send> {
-        let route = route.downcast::<T::Route>().expect("An error occured when downcasting a dyn Any route");
+        let route = route
+            .downcast::<T::Route>()
+            .expect("An error occured when downcasting a dyn Any route");
         let props = <T as DynPage>::get_server_props(*route).await;
         Box::new(props)
     }
@@ -80,7 +88,7 @@ mod test {
 
             match (iter.next(), iter.next()) {
                 (Some(value), None) if value == &"index" => Some(MyRoute),
-                _ => None
+                _ => None,
             }
         }
     }
@@ -91,7 +99,7 @@ mod test {
         type Props = ();
 
         fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
-            view!{ cx,
+            view! { cx,
                 p {
                     "Greetings!"
                 }
@@ -113,7 +121,6 @@ mod test {
         let dyn_ssr_view = render_to_string(|cx| dyn_page.render_server(cx, Box::new(())));
         let ssr_view = render_to_string(|cx| MyPage::render(cx, ()));
 
-        
         assert_eq!(dyn_ssr_view, ssr_view);
         assert!(ssr_view.contains("Greetings!"));
     }

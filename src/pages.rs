@@ -1,12 +1,15 @@
-use std::any::Any;
 use super::prelude::*;
+use std::any::Any;
 
 pub struct Pages {
     dyn_pages: Vec<Box<dyn DynPageDyn>>,
 }
 
 impl Pages {
-    pub fn find_dyn_page_and_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any + Send>)> {    
+    pub fn find_dyn_page_and_route<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any + Send>)> {
         for page in &self.dyn_pages {
             if let Some(route) = page.try_match_route(url_infos) {
                 return Some((&**page, route));
@@ -14,8 +17,11 @@ impl Pages {
         }
         None
     }
-    
-    pub async fn find_dyn_page_and_props<'url>(&self, url_infos: &UrlInfos<'url>,) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any>)> {
+
+    pub async fn find_dyn_page_and_props<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<(&'_ dyn DynPageDyn, Box<dyn Any>)> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
         let props = page.get_server_props(route).await;
         Some((page, props))
@@ -38,8 +44,10 @@ mod test {
             let mut iter = url.segments().iter();
 
             match (iter.next(), iter.next(), iter.next()) {
-                (Some(value), Some(greeting), None) if value == &"index" => Some(MyRoute(greeting.to_string())),
-                _ => None
+                (Some(value), Some(greeting), None) if value == &"index" => {
+                    Some(MyRoute(greeting.to_string()))
+                }
+                _ => None,
             }
         }
     }
@@ -50,7 +58,7 @@ mod test {
         type Props = String;
 
         fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G> {
-            view!{ cx,
+            view! { cx,
                 p {
                     (props)
                 }
@@ -60,20 +68,19 @@ mod test {
 
     #[async_trait]
     impl DynPage for MyPage {
-        async fn get_server_props(route: Self::Route) -> Self::Props  {
+        async fn get_server_props(route: Self::Route) -> Self::Props {
             route.0
         }
     }
 
     #[tokio::test]
     async fn test() {
-
         let greeting = "test_greeting";
 
         let url = format!("index/{}", greeting);
 
         let pages = Pages {
-            dyn_pages: vec![Box::new(MyPage)]
+            dyn_pages: vec![Box::new(MyPage)],
         };
 
         let url_infos = UrlInfos::parse_from_url(&url);
@@ -85,6 +92,3 @@ mod test {
         assert!(rendered_html.contains(greeting));
     }
 }
-
-
-

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, any::Any, ops::Deref};
+use std::{any::Any, collections::HashMap, ops::Deref};
 
 pub trait Route: Any + Sized + Send {
     fn try_from_url(url: &UrlInfos) -> Option<Self>;
@@ -55,9 +55,9 @@ fn parse_segments<'a>(path: &'a str) -> Segments {
 fn parse_url<'a>(url: &'a str) -> (Segments<'a>, Option<Params<'a>>) {
     let (path, params) = match url.split_once('?') {
         Some((path, params)) => (path, Some(params)),
-        None => (url, None)
+        None => (url, None),
     };
-    
+
     let segments = parse_segments(path);
 
     let params = params.map(Params::parse);
@@ -86,4 +86,3 @@ impl<'a> UrlInfos<'a> {
         UrlInfos { segments, params }
     }
 }
-

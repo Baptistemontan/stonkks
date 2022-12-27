@@ -6,7 +6,6 @@ pub mod prelude {
 
 // use sycamore::prelude::*;
 
-
 /// #[route("/index/<greeting>")] // impl Route
 /// struct IndexRoute {
 ///     pub greeting: String
