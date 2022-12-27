@@ -1,29 +1,89 @@
-use std::{collections::HashMap, any::Any};
+use std::{collections::HashMap, any::Any, ops::Deref};
 
-pub trait Route {
-    fn try_from_parsed_path(segments: &Segments, params: Option<&Params>) -> Option<Box<dyn Any>>;
+pub trait Route: Any + Sized + Send {
+    fn try_from_url(url: &UrlInfos) -> Option<Self>;
 }
 
-pub struct Params<'a>(HashMap<&'a str, &'a str>);
+#[repr(transparent)]
+struct Params<'a>(HashMap<&'a str, &'a str>);
 
-pub struct Segments<'a>(Box<[&'a str]>);
+impl<'a> Deref for Params<'a> {
+    type Target = HashMap<&'a str, &'a str>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[repr(transparent)]
+struct Segments<'a>(Box<[&'a str]>);
+
+impl<'a> Deref for Segments<'a> {
+    type Target = [&'a str];
+
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
 
 impl<'a> FromIterator<&'a str> for Segments<'a> {
     fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
-        let segments: Box<[&'a str]> = iter.into_iter().collect();
+        let segments = iter.into_iter().collect();
         Segments(segments)
     }
 }
 
 impl<'a> Params<'a> {
-    pub fn try_parse(params: &'a str) -> Option<Self> {
+    pub fn parse(params: &'a str) -> Self {
         let mut params_map = HashMap::new();
         let iter = params.split('&').map(|segment| segment.split_once('='));
         for params in iter {
-            let (name, value) = params?;
-            params_map.insert(name, value);
+            // silently ignore malformed params
+            // TODO: figure out what to do in this case.
+            if let Some((name, value)) = params {
+                params_map.insert(name, value);
+            }
         }
-        Some(Params(params_map))
+        Params(params_map)
+    }
+}
+
+fn parse_segments<'a>(path: &'a str) -> Segments {
+    path.split('/').filter(|s| !s.is_empty()).collect()
+}
+
+fn parse_url<'a>(url: &'a str) -> (Segments<'a>, Option<Params<'a>>) {
+    let (path, params) = match url.split_once('?') {
+        Some((path, params)) => (path, Some(params)),
+        None => (url, None)
+    };
+    
+    let segments = parse_segments(path);
+
+    let params = params.map(Params::parse);
+
+    (segments, params)
+}
+
+pub struct UrlInfos<'a> {
+    segments: Segments<'a>,
+    params: Option<Params<'a>>,
+}
+
+impl<'a> UrlInfos<'a> {
+    pub fn segments(&self) -> &[&'a str] {
+        &self.segments
+    }
+
+    pub fn params(&self) -> Option<&HashMap<&'a str, &'a str>> {
+        self.params.as_deref()
+    }
+}
+
+impl<'a> UrlInfos<'a> {
+    pub fn parse_from_url(url: &'a str) -> Self {
+        let (segments, params) = parse_url(url);
+        UrlInfos { segments, params }
     }
 }
 
