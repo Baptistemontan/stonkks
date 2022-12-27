@@ -1,11 +1,16 @@
 use super::prelude::*;
 use std::any::Any;
 
+#[derive(Default)]
 pub struct Pages {
     dyn_pages: Vec<Box<dyn DynPageDyn>>,
 }
 
 impl Pages {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn find_dyn_page_and_route<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
@@ -25,6 +30,17 @@ impl Pages {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
         let props = page.get_server_props(route).await;
         Some((page, props))
+    }
+
+    pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<String> {
+        let (page, props) = self.find_dyn_page_and_props(url_infos).await?;
+        let html = sycamore::render_to_string(|cx| page.render_server(cx, props));
+        Some(html)
+    }
+
+    pub fn dyn_route<T: DynPage>(mut self, page: T) -> Self {
+        self.dyn_pages.push(Box::new(page));
+        self
     }
 }
 
@@ -76,19 +92,13 @@ mod test {
     #[tokio::test]
     async fn test() {
         let greeting = "test_greeting";
-
         let url = format!("index/{}", greeting);
 
-        let pages = Pages {
-            dyn_pages: vec![Box::new(MyPage)],
-        };
+        let pages = Pages::new().dyn_route(MyPage);
 
         let url_infos = UrlInfos::parse_from_url(&url);
 
-        let (page, props) = pages.find_dyn_page_and_props(&url_infos).await.unwrap();
-
-        let rendered_html = sycamore::render_to_string(|cx| page.render_server(cx, props));
-
+        let rendered_html = pages.render_to_string(&url_infos).await.unwrap();
         assert!(rendered_html.contains(greeting));
     }
 }
