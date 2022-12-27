@@ -47,7 +47,7 @@ impl<T: BasePage> DynBasePage for T {
 
 #[async_trait]
 pub trait DynPage: BasePage + Sync {
-    async fn get_server_props(&self, route: Self::Route) -> Self::Props;
+    async fn get_server_props(route: Self::Route) -> Self::Props;
 }
 
 #[async_trait]
@@ -59,7 +59,7 @@ pub trait DynPageDyn: DynBasePage {
 impl<T: DynPage> DynPageDyn for T {
     async fn get_server_props(&self, route: Box<dyn Any + Send>) -> Box<dyn Any + Send> {
         let route = route.downcast::<T::Route>().expect("An error occured when downcasting a dyn Any route");
-        let props = <T as DynPage>::get_server_props(&self, *route).await;
+        let props = <T as DynPage>::get_server_props(*route).await;
         Box::new(props)
     }
 }
