@@ -122,7 +122,7 @@ impl<T: Component> Drop for PropsCastedPtr<T> {
 }
 
 impl PropsUntypedPtr {
-    pub fn new<T: Page>(props: T::Props) -> Self {
+    pub fn new<T: Component>(props: T::Props) -> Self {
         let boxed_props = Box::new(props);
         let ptr = Box::into_raw(boxed_props) as *mut _;
         PropsUntypedPtr(ptr)
@@ -134,7 +134,7 @@ impl PropsUntypedPtr {
         PropsUntypedPtr(ptr)
     }
 
-    pub unsafe fn cast<T: Page>(self) -> PropsCastedPtr<T> {
+    pub unsafe fn cast<T: Component>(self) -> PropsCastedPtr<T> {
         self.into()
     }
 

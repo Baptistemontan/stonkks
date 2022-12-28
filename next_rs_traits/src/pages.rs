@@ -5,8 +5,8 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
-use serde::{Serialize, Deserialize, Serializer};
-use serde_json::{Error, Serializer as JsonSerializer};
+use serde::{Serialize, Deserialize};
+use serde_json::Error;
 
 pub type ComponentProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
@@ -14,8 +14,12 @@ pub trait Component {
     type Props: Props;
 
     fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G>;
-    fn serialize_props<S: Serializer>(props: &Self::Props, serializer: S) -> Result<S::Ok, S::Error> {
-        props.serialize(serializer)
+    fn serialize_props(props: &Self::Props) -> Result<String, Error> {
+        serde_json::to_string(props)
+    }
+
+    fn deserialize_props(serialized_props: &str) -> Result<Self::Props, Error> {
+        serde_json::from_str(serialized_props)
     }
 }
 
@@ -56,6 +60,7 @@ pub trait DynComponent {
     unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> View<HydrateNode>;
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error>;
+    fn deserialize_props(&self, serialized_props: &str) -> Result<PropsUntypedPtr, Error>;
 }
 
 impl<T: Component> DynComponent for T {
@@ -78,15 +83,14 @@ impl<T: Component> DynComponent for T {
     }
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error> {
-        let mut buff = Vec::new();
-        let mut serializer = JsonSerializer::new(&mut buff);
         let shared_props = props.to_shared::<T>();
-        T::serialize_props(&shared_props, &mut serializer)?;
-        let string = unsafe {
-            // serde_json garanties to not emit invalid UTF-8.
-            String::from_utf8_unchecked(buff)
-        };
-        Ok(string)
+        T::serialize_props(&shared_props)
+    }
+
+    fn deserialize_props(&self, serialized_props: &str) -> Result<PropsUntypedPtr, Error> {
+        let props = T::deserialize_props(serialized_props)?;
+        let props_ptr = PropsUntypedPtr::new::<T>(props);
+        Ok(props_ptr)
     }
 }
 
