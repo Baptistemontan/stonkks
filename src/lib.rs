@@ -1,7 +1,9 @@
 mod pages;
 
 pub mod prelude {
+    use super::*;
     pub use next_rs_traits::predule::*;
+    pub use pages::Pages;
 }
 
 // use sycamore::prelude::*;

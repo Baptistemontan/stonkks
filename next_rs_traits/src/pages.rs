@@ -19,7 +19,7 @@ pub trait Page: Component {
 }
 
 pub mod pages_ptr {
-    use super::{Page, Component};
+    use super::{Component, Page};
 
     // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
     // because they can only be created by either consuming one another
@@ -60,7 +60,8 @@ pub mod pages_ptr {
 
     impl RouteUntypedPtr {
         pub fn new<'a, T: Page>(route: T::Route<'a>) -> Self
-            where T::Route<'a>: Send
+        where
+            T::Route<'a>: Send,
         {
             let boxed_route = Box::new(route);
             let ptr = Box::leak(boxed_route) as *mut _ as *mut ();
@@ -97,7 +98,8 @@ pub mod pages_ptr {
 
     impl PropsUntypedPtr {
         pub fn new<T: Page>(props: T::Props) -> Self
-            where T::Props: Send
+        where
+            T::Props: Send,
         {
             let boxed_props = Box::new(props);
             let ptr = Box::leak(boxed_props) as *mut _ as *mut ();
@@ -155,7 +157,8 @@ impl<T: Page> DynBasePage for T {
 
 #[async_trait]
 pub trait DynPage: Page + Sync
-    where Self::Props: Send,
+where
+    Self::Props: Send,
 {
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
 }
@@ -167,76 +170,13 @@ pub trait DynPageDyn: DynBasePage {
 
 #[async_trait]
 impl<T: DynPage> DynPageDyn for T
-    where T::Props: Send
+where
+    T::Props: Send,
 {
     async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr {
         let route_casted_ptr: RouteCastedPtr<T> = route_ptr.into();
         let route = route_casted_ptr.into_inner();
         let props = <T as DynPage>::get_server_props(route).await;
         PropsUntypedPtr::new::<T>(props)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use sycamore::render_to_string;
-
-    use super::*;
-
-    struct MyPage;
-
-    struct MyRoute;
-
-    impl<'a> Route<'a> for MyRoute {
-        fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
-            let mut iter = url.segments().iter();
-
-            match (iter.next(), iter.next()) {
-                (Some(value), None) if value == &"index" => Some(MyRoute),
-                _ => None,
-            }
-        }
-    }
-
-    impl Component for MyPage {
-        type Props = ();
-
-        fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
-            view! { cx,
-                p {
-                    "Greetings!"
-                }
-            }
-        }
-    }
-
-    impl Page for MyPage {
-        type Route<'a> = MyRoute;
-    }
-
-    #[test]
-    fn test() {
-        let page = MyPage;
-        let dyn_page: Box<dyn DynBasePage> = Box::new(page);
-        let url_infos = UrlInfos::parse_from_url("/about");
-        unsafe {
-            assert!(dyn_page.try_match_route(&url_infos).is_none());
-        }
-        let url_infos = UrlInfos::parse_from_url("/index/other");
-        unsafe {
-            assert!(dyn_page.try_match_route(&url_infos).is_none());
-        }
-        let url_infos = UrlInfos::parse_from_url("/index");
-        unsafe {
-            assert!(dyn_page.try_match_route(&url_infos).is_some());
-        }
-
-        let dyn_ssr_view = render_to_string(|cx| unsafe {
-            dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(()))
-        });
-        let ssr_view = render_to_string(|cx| MyPage::render(cx, ()));
-
-        assert_eq!(dyn_ssr_view, ssr_view);
-        assert!(ssr_view.contains("Greetings!"));
     }
 }

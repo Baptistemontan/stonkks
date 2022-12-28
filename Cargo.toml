@@ -19,3 +19,6 @@ members = [
     "next_rs_macro",
     "next_rs_traits"
 ]
+
+[[test]]
+name = "ssr"
