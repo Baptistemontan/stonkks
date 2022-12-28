@@ -3,6 +3,7 @@ use next_rs::prelude::*;
 use next_rs_traits::pages::DynBasePage;
 use next_rs_traits::pointers::*;
 use sycamore::{prelude::*, render_to_string};
+use serde::{Serialize, Deserialize};
 
 struct MyLayout;
 
@@ -37,6 +38,7 @@ impl<'a> Route<'a> for MyRoute<'a> {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 struct MyProps(String);
 
 struct MyReactiveProps<'a>(&'a Signal<String>);

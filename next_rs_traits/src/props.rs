@@ -1,7 +1,8 @@
 use sycamore::prelude::*;
+use serde::{Serialize, Deserialize};
 
 
-pub trait Props: Send + 'static + IntoProps { }
+pub trait Props: Send + 'static + IntoProps + Serialize + Deserialize<'static> { }
 
 
 pub trait ReactiveProps<'a> {

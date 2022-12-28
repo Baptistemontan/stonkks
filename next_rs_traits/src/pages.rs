@@ -5,6 +5,8 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
+use serde::{Serialize, Deserialize};
+
 pub type ComponentProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
 pub trait Component {
@@ -13,6 +15,7 @@ pub trait Component {
     fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G>;
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct NotFoundPageProps;
 
 pub struct NotFountPageReactiveProps;
