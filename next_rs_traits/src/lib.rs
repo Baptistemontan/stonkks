@@ -6,6 +6,6 @@ pub mod routes;
 pub mod predule {
     use super::*;
     pub use layout::Layout;
-    pub use pages::{Component, DynPage, Page, NotFoundPage, NotFoundPageProps};
+    pub use pages::{Component, DynPage, NotFoundPage, NotFoundPageProps, Page};
     pub use routes::{Route, UrlInfos};
 }

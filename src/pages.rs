@@ -1,7 +1,7 @@
-use super::prelude::*;
-use next_rs_traits::pages::{DynPageDyn, DynComponent};
-use next_rs_traits::pointers::*;
 use super::default::{AppLayout, NotFound};
+use super::prelude::*;
+use next_rs_traits::pages::{DynComponent, DynPageDyn};
+use next_rs_traits::pointers::*;
 
 #[derive(Default)]
 pub struct Pages {
@@ -38,11 +38,17 @@ impl Pages {
         Some((page, props))
     }
 
-    pub async fn find_page_and_props<'url>(&self, url_infos: &UrlInfos<'url>) -> (&'_ dyn DynComponent, PropsUntypedPtr) {
+    pub async fn find_page_and_props<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> (&'_ dyn DynComponent, PropsUntypedPtr) {
         if let Some((page, props)) = self.find_dyn_page_and_props(url_infos).await {
             return (page.as_dyn_component(), props);
         }
-        (&*self.not_found_page, PropsUntypedPtr::new_not_found_props(NotFoundPageProps))
+        (
+            &*self.not_found_page,
+            PropsUntypedPtr::new_not_found_props(NotFoundPageProps),
+        )
     }
 
     pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> String {
