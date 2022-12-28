@@ -60,6 +60,20 @@ impl DynPage for MyPage {
     }
 }
 
+struct MyNotFound;
+
+impl Component for MyNotFound {
+    type Props = NotFoundPageProps;
+
+    fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
+        view! { cx,
+            p {
+                "Custom not found page"
+            }
+        }
+    }
+}
+
 #[tokio::test]
 async fn test_dyn_page() {
     let greeting = "test_greeting";
@@ -120,3 +134,32 @@ async fn test_layout() {
     assert!(rendered_html.contains("Title"));
     assert!(rendered_html.contains("test paragraphe"));
 }
+
+#[tokio::test]
+async fn test_default_not_found() {
+    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout);
+
+    let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
+
+    let rendered_html = pages.render_to_string(&url_infos).await;
+
+    println!("{}", rendered_html);
+
+    assert!(rendered_html.contains("Page not found."));
+}
+
+#[tokio::test]
+async fn test_custom_not_found() {
+    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout).not_found(MyNotFound);
+
+    let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
+
+    let rendered_html = pages.render_to_string(&url_infos).await;
+
+    println!("{}", rendered_html);
+
+    assert!(rendered_html.contains("Custom not found"));
+}
+
+
+
