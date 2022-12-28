@@ -46,7 +46,7 @@ impl Deref for AppLayout {
 struct DefaultNotFound;
 
 impl Component for DefaultNotFound {
-    type Props = ();
+    type Props = NotFoundPageProps;
 
     fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
         view! { cx,

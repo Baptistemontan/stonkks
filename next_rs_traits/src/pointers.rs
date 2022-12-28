@@ -1,3 +1,5 @@
+use crate::pages::NotFoundPageProps;
+
 use super::pages::{Component, Page};
 
 // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
@@ -85,8 +87,8 @@ impl PropsUntypedPtr {
         PropsUntypedPtr(ptr)
     }
 
-    pub fn new_unit() -> Self {
-        let boxed_unit = Box::new(());
+    pub fn new_not_found_props(props: NotFoundPageProps) -> Self {
+        let boxed_unit = Box::new(props);
         let ptr = Box::leak(boxed_unit) as *mut _ as *mut ();
         PropsUntypedPtr(ptr)
     }

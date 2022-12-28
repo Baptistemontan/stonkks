@@ -42,7 +42,7 @@ impl Pages {
         if let Some((page, props)) = self.find_dyn_page_and_props(url_infos).await {
             return (page.as_dyn_component(), props);
         }
-        (&*self.not_found_page, PropsUntypedPtr::new_unit())
+        (&*self.not_found_page, PropsUntypedPtr::new_not_found_props(NotFoundPageProps))
     }
 
     pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> String {

@@ -11,9 +11,11 @@ pub trait Component {
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
-pub trait NotFoundPage: Component<Props = ()> + 'static {}
+pub struct NotFoundPageProps;
 
-impl<T: Component<Props = ()> + 'static> NotFoundPage for T {}
+pub trait NotFoundPage: Component<Props = NotFoundPageProps> + 'static {}
+
+impl<T: Component<Props = NotFoundPageProps> + 'static> NotFoundPage for T {}
 
 pub trait Page: Component {
     type Route<'a>: Route<'a>;
