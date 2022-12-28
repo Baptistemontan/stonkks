@@ -5,10 +5,7 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
-pub trait Props: Send + 'static {
-
-}
-
+pub trait Props: Send + 'static {}
 
 pub trait Component {
     type Props: Props;
