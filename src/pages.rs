@@ -1,6 +1,6 @@
 use super::default::{AppLayout, NotFound};
 use super::prelude::*;
-use next_rs_traits::pages::{DynComponent, DynPageDyn};
+use next_rs_traits::pages::{DynBasePage, DynComponent, DynPageDyn};
 use next_rs_traits::pointers::*;
 
 #[derive(Default)]
@@ -20,13 +20,26 @@ impl Pages {
         url_infos: &UrlInfos<'url>,
     ) -> Option<(&'_ dyn DynPageDyn, RouteUntypedPtr<'url>)> {
         for page in &self.dyn_pages {
-            unsafe {
-                if let Some(route) = page.try_match_route(url_infos) {
-                    return Some((&**page, route));
-                }
+            if let Some(route) = page.try_match_route(url_infos) {
+                return Some((&**page, route));
             }
         }
         None
+    }
+
+    fn find_any_page<'url, 'a, I: IntoIterator<Item = &'a dyn DynBasePage>>(
+        pages: I,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<&'a dyn DynComponent> {
+        pages.into_iter().find_map(|page| {
+            page.try_match_route(url_infos)
+                .map(|_| page.as_dyn_component())
+        })
+    }
+
+    pub fn find_page<'url>(&self, url_infos: &UrlInfos<'url>) -> &'_ dyn DynComponent {
+        let dyn_pages = self.dyn_pages.iter().map(|page| page.as_dyn_base_page());
+        Self::find_any_page(dyn_pages, url_infos).unwrap_or(&*self.not_found_page)
     }
 
     pub async fn find_dyn_page_and_props<'url>(
@@ -77,13 +90,4 @@ impl Pages {
         self.not_found_page = not_found.into();
         self
     }
-
-    // pub fn render_client<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<String> {
-    //     let (page, props) = self.find_dyn_page_and_props(url_infos).await?;
-    //     let html = sycamore::render(|cx| {
-    //         let props = unsafe { page.render_server(cx, props) };
-    //         self.layout.render_server(cx, props)
-    //     });
-    //     Some(html)
-    // }
 }
