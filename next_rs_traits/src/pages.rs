@@ -5,13 +5,20 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
+pub trait Props: Send + 'static {
+
+}
+
+
 pub trait Component {
-    type Props: Send + 'static;
+    type Props: Props;
 
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
 pub struct NotFoundPageProps;
+
+impl Props for NotFoundPageProps {}
 
 pub trait NotFoundPage: Component<Props = NotFoundPageProps> + 'static {}
 

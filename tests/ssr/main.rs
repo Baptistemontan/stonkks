@@ -37,13 +37,17 @@ impl<'a> Route<'a> for MyRoute<'a> {
     }
 }
 
+struct MyProps(String);
+
+impl Props for MyProps {}
+
 impl Component for MyPage {
-    type Props = String;
+    type Props = MyProps;
 
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G> {
         view! { cx,
             p {
-                (props)
+                (props.0)
             }
         }
     }
@@ -56,7 +60,7 @@ impl Page for MyPage {
 #[async_trait]
 impl DynPage for MyPage {
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props {
-        route.0.to_string()
+        MyProps(route.0.to_string())
     }
 }
 
@@ -102,9 +106,9 @@ fn test_routing() {
     let props: &str = "Greetings!";
 
     let dyn_ssr_view = render_to_string(|cx| unsafe {
-        dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(props.into()))
+        dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(MyProps(props.into())))
     });
-    let ssr_view = render_to_string(|cx| MyPage::render(cx, props.into()));
+    let ssr_view = render_to_string(|cx| MyPage::render(cx, MyProps(props.into())));
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));

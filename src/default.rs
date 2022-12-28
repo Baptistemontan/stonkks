@@ -3,7 +3,6 @@ use std::ops::Deref;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::DynComponent;
-
 use sycamore::prelude::*;
 
 struct DefaultLayout;

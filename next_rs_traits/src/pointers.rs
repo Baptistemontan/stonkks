@@ -8,7 +8,7 @@ use std::{any::Any, mem};
 // because they can only be created by either consuming one another
 // or by consumming the value, boxing it and then leaking the box, taking exclusive ownership of the pointer.
 // They are finally consummed when converting to the inner type.
-// They are made for moving data maner for props and routes.
+// They are made for moving data in untyped manner for props and routes, the routes one are also made to retain lifetime informations.
 // Those pointers act like a box, if they are drop without being consummed the data is still being dropped
 // if you want access to the contained pointer use Ptr::leak(), this will return the pointer and mem::forget the pointer.
 
