@@ -150,7 +150,10 @@ async fn test_default_not_found() {
 
 #[tokio::test]
 async fn test_custom_not_found() {
-    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout).not_found(MyNotFound);
+    let pages = Pages::new()
+        .dyn_page(MyPage)
+        .with_layout(MyLayout)
+        .not_found(MyNotFound);
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
@@ -160,6 +163,3 @@ async fn test_custom_not_found() {
 
     assert!(rendered_html.contains("Custom not found"));
 }
-
-
-
