@@ -12,13 +12,6 @@ use std::{any::Any, mem};
 // Those pointers act like a box, if they are drop without being consummed the data is still being dropped
 // if you want access to the contained pointer use Ptr::leak(), this will return the pointer and mem::forget the pointer.
 
-// After Reconsideration, with everything I've learned creating these pointers,
-// There is a good chance I can do the exact same thing in safe rust.
-// might need to take a look. The real MVP in there is probably the `LiftimedAny` Trait,
-// The inital problem happened when working with the async trait, <dyn Any> did not provide enough
-// informations for the all mighty Borrow checker.
-// but with the lifetimed counterpart it's another thing.
-
 pub trait LifetimedAny<'a>: 'a {}
 
 impl<'a, T: 'a> LifetimedAny<'a> for T {}
