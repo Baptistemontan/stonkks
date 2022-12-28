@@ -66,6 +66,7 @@ fn parse_url<'a>(url: &'a str) -> (Segments<'a>, Option<Params<'a>>) {
 }
 
 pub struct UrlInfos<'a> {
+    url: &'a str,
     segments: Segments<'a>,
     params: Option<Params<'a>>,
 }
@@ -78,11 +79,19 @@ impl<'a> UrlInfos<'a> {
     pub fn params(&self) -> Option<&HashMap<&'a str, &'a str>> {
         self.params.as_deref()
     }
+
+    pub fn url(&self) -> &'a str {
+        self.url
+    }
 }
 
 impl<'a> UrlInfos<'a> {
     pub fn parse_from_url(url: &'a str) -> Self {
         let (segments, params) = parse_url(url);
-        UrlInfos { segments, params }
+        UrlInfos {
+            url,
+            segments,
+            params,
+        }
     }
 }
