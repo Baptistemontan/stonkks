@@ -39,15 +39,30 @@ impl<'a> Route<'a> for MyRoute<'a> {
 
 struct MyProps(String);
 
+struct MyReactiveProps<'a>(&'a Signal<String>);
+
 impl Props for MyProps {}
+
+impl IntoProps for MyProps {
+    type ReactiveProps<'a> = MyReactiveProps<'a>;
+
+    fn into_reactive_props<'a>(self, cx: Scope<'a>) -> Self::ReactiveProps<'a> {
+        let signal = create_signal(cx, self.0);
+        MyReactiveProps(signal)
+    }
+}
+
+impl<'a> ReactiveProps<'a> for MyReactiveProps<'a> {
+    type Props = MyProps;
+}
 
 impl Component for MyPage {
     type Props = MyProps;
 
-    fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G> {
+    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G> {
         view! { cx,
             p {
-                (props.0)
+                (props.0.get())
             }
         }
     }
@@ -69,7 +84,7 @@ struct MyNotFound;
 impl Component for MyNotFound {
     type Props = NotFoundPageProps;
 
-    fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
+    fn render<'a, G: Html>(cx: Scope<'a>, _props: ComponentProps<'a, Self>) -> View<G> {
         view! { cx,
             p {
                 "Custom not found page"
@@ -108,7 +123,7 @@ fn test_routing() {
     let dyn_ssr_view = render_to_string(|cx| unsafe {
         dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(MyProps(props.into())))
     });
-    let ssr_view = render_to_string(|cx| MyPage::render(cx, MyProps(props.into())));
+    let ssr_view = render_to_string(|cx| MyPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));

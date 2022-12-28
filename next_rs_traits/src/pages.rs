@@ -5,15 +5,29 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
-pub trait Props: Send + 'static {}
+pub type ComponentProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
 pub trait Component {
     type Props: Props;
 
-    fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
+    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G>;
 }
 
 pub struct NotFoundPageProps;
+
+pub struct NotFountPageReactiveProps;
+
+impl ReactiveProps<'_> for NotFountPageReactiveProps {
+    type Props = NotFoundPageProps;
+}
+
+impl IntoProps for NotFoundPageProps {
+    type ReactiveProps<'a> = NotFountPageReactiveProps;
+
+    fn into_reactive_props<'a>(self, _cx: Scope<'a>) -> Self::ReactiveProps<'a> {
+        NotFountPageReactiveProps
+    }
+}
 
 impl Props for NotFoundPageProps {}
 
@@ -38,19 +52,19 @@ pub trait DynComponent {
 impl<T: Component> DynComponent for T {
     unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
         let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
+        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
         <T as Component>::render(cx, props)
     }
 
     unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
         let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
+        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
         <T as Component>::render(cx, props)
     }
 
     unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
         let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
+        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
         <T as Component>::render(cx, props)
     }
 }
