@@ -5,7 +5,8 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer};
+use serde_json::{Error, Serializer as JsonSerializer};
 
 pub type ComponentProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
@@ -13,6 +14,9 @@ pub trait Component {
     type Props: Props;
 
     fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G>;
+    fn serialize_props<S: Serializer>(props: &Self::Props, serializer: S) -> Result<S::Ok, S::Error> {
+        props.serialize(serializer)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -50,6 +54,8 @@ pub trait DynComponent {
     unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> View<DomNode>;
     unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> View<SsrNode>;
     unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> View<HydrateNode>;
+
+    unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error>;
 }
 
 impl<T: Component> DynComponent for T {
@@ -69,6 +75,18 @@ impl<T: Component> DynComponent for T {
         let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
         let props = props_casted_ptr.into_inner().into_reactive_props(cx);
         <T as Component>::render(cx, props)
+    }
+
+    unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error> {
+        let mut buff = Vec::new();
+        let mut serializer = JsonSerializer::new(&mut buff);
+        let shared_props = props.to_shared::<T>();
+        T::serialize_props(&shared_props, &mut serializer)?;
+        let string = unsafe {
+            // serde_json garanties to not emit invalid UTF-8.
+            String::from_utf8_unchecked(buff)
+        };
+        Ok(string)
     }
 }
 

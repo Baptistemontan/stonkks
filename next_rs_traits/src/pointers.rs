@@ -2,7 +2,7 @@ use crate::pages::NotFoundPageProps;
 
 use super::pages::{Component, Page};
 
-use std::{any::Any, mem};
+use std::{any::Any, mem, ops::Deref};
 
 // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
 // because they can only be created by either consuming one another
@@ -85,6 +85,8 @@ unsafe impl<'a> Send for RouteUntypedPtr<'a> {}
 pub struct PropsCastedPtr<T: Component>(*mut T::Props);
 pub struct PropsUntypedPtr(*mut dyn Any);
 
+pub struct PropsSharedCastedPtr<'a, T: Component>(&'a T::Props);
+
 impl<T: Component> From<PropsUntypedPtr> for PropsCastedPtr<T> {
     fn from(props_ptr: PropsUntypedPtr) -> Self {
         let ptr = props_ptr.leak();
@@ -105,6 +107,8 @@ impl<T: Component> PropsCastedPtr<T> {
         ptr
     }
 }
+
+
 
 unsafe impl<T: Component> Send for PropsCastedPtr<T> {}
 
@@ -139,6 +143,12 @@ impl PropsUntypedPtr {
         mem::forget(self);
         ptr
     }
+
+    pub unsafe fn to_shared<T: Component>(&self) -> PropsSharedCastedPtr<T> {
+        let ptr = self.0 as *mut T::Props;
+        let reference = &*ptr;
+        PropsSharedCastedPtr(reference)
+    }
 }
 
 impl Drop for PropsUntypedPtr {
@@ -152,3 +162,11 @@ impl Drop for PropsUntypedPtr {
 
 // same as RouteUntypePtr, can only be created if T is send
 unsafe impl Send for PropsUntypedPtr {}
+
+impl<'a, T: Component> Deref for PropsSharedCastedPtr<'a, T> {
+    type Target = T::Props;
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
