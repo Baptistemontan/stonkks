@@ -43,7 +43,7 @@ impl DynPage for MyPage {
 }
 
 #[tokio::test]
-async fn test_1() {
+async fn test_dyn_page() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
