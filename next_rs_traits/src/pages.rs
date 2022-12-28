@@ -11,6 +11,10 @@ pub trait Component {
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
+pub trait NotFoundPage: Component<Props = ()> + 'static {}
+
+impl<T: Component<Props = ()> + 'static> NotFoundPage for T {}
+
 pub trait Page: Component {
     type Route<'a>: Route<'a>;
 
@@ -47,6 +51,8 @@ impl<T: Component> DynComponent for T {
 
 pub trait DynBasePage: DynComponent {
     unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
+
+    fn as_dyn_component(&self) -> &dyn DynComponent;
 }
 
 impl<T: Page> DynBasePage for T {
@@ -54,6 +60,10 @@ impl<T: Page> DynBasePage for T {
         let route = <T as Page>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
+    }
+
+    fn as_dyn_component(&self) -> &dyn DynComponent {
+        self
     }
 }
 
@@ -68,6 +78,7 @@ where
 #[async_trait]
 pub trait DynPageDyn: DynBasePage {
     async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr; // IndexRoute -> IndexPageProps
+    fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
 
 #[async_trait]
@@ -80,5 +91,9 @@ where
         let route = route_casted_ptr.into_inner();
         let props = <T as DynPage>::get_server_props(route).await;
         PropsUntypedPtr::new::<T>(props)
+    }
+
+    fn as_dyn_base_page(&self) -> &dyn DynBasePage {
+        self
     }
 }

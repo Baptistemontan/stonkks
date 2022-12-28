@@ -85,6 +85,12 @@ impl PropsUntypedPtr {
         PropsUntypedPtr(ptr)
     }
 
+    pub fn new_unit() -> Self {
+        let boxed_unit = Box::new(());
+        let ptr = Box::leak(boxed_unit) as *mut _ as *mut ();
+        PropsUntypedPtr(ptr)
+    }
+
     pub unsafe fn cast<T: Page>(self) -> PropsCastedPtr<T> {
         self.into()
     }

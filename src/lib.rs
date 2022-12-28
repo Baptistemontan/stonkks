@@ -1,4 +1,5 @@
 mod pages;
+mod default;
 
 pub mod prelude {
     use super::*;
