@@ -82,7 +82,7 @@ mod test {
         }
     }
 
-    impl BasePage for MyPage {
+    impl Page for MyPage {
         type Route<'a> = MyRoute<'a>;
     }
 

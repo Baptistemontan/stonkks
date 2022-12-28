@@ -10,7 +10,7 @@ pub trait Component {
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
-pub trait BasePage: Component {
+pub trait Page: Component {
     type Route<'a>: Route<'a>;
 
     fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
@@ -19,7 +19,7 @@ pub trait BasePage: Component {
 }
 
 pub mod pages_ptr {
-    use super::{BasePage, Component};
+    use super::{Page, Component};
 
     // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
     // because they can only be created by either consuming one another
@@ -40,32 +40,32 @@ pub mod pages_ptr {
 
     // Route ptr wrapper:
 
-    pub struct RouteCastedPtr<'a, T: BasePage>(*mut T::Route<'a>);
+    pub struct RouteCastedPtr<'a, T: Page>(*mut T::Route<'a>);
     pub struct RouteUntypedPtr(*mut ());
 
-    impl<'a, T: BasePage> From<RouteUntypedPtr> for RouteCastedPtr<'a, T> {
+    impl<'a, T: Page> From<RouteUntypedPtr> for RouteCastedPtr<'a, T> {
         fn from(RouteUntypedPtr(route_ptr): RouteUntypedPtr) -> Self {
             RouteCastedPtr(route_ptr as *mut _)
         }
     }
 
-    impl<'a, T: BasePage> RouteCastedPtr<'a, T> {
+    impl<'a, T: Page> RouteCastedPtr<'a, T> {
         pub unsafe fn into_inner(self) -> T::Route<'a> {
             let route = Box::from_raw(self.0);
             *route
         }
     }
 
-    unsafe impl<'a, T: BasePage> Send for RouteCastedPtr<'a, T> {}
+    unsafe impl<'a, T: Page> Send for RouteCastedPtr<'a, T> {}
 
     impl RouteUntypedPtr {
-        pub fn new<'a, T: BasePage>(route: T::Route<'a>) -> Self {
+        pub fn new<'a, T: Page>(route: T::Route<'a>) -> Self {
             let boxed_route = Box::new(route);
             let ptr = Box::leak(boxed_route) as *mut _ as *mut ();
             RouteUntypedPtr(ptr)
         }
 
-        pub unsafe fn cast<'a, T: BasePage>(self) -> RouteCastedPtr<'a, T> {
+        pub unsafe fn cast<'a, T: Page>(self) -> RouteCastedPtr<'a, T> {
             self.into()
         }
     }
@@ -93,13 +93,13 @@ pub mod pages_ptr {
     unsafe impl<T: Component> Send for PropsCastedPtr<T> {}
 
     impl PropsUntypedPtr {
-        pub fn new<T: BasePage>(props: T::Props) -> Self {
+        pub fn new<T: Page>(props: T::Props) -> Self {
             let boxed_props = Box::new(props);
             let ptr = Box::leak(boxed_props) as *mut _ as *mut ();
             PropsUntypedPtr(ptr)
         }
 
-        pub unsafe fn cast<T: BasePage>(self) -> PropsCastedPtr<T> {
+        pub unsafe fn cast<T: Page>(self) -> PropsCastedPtr<T> {
             self.into()
         }
     }
@@ -139,16 +139,16 @@ pub trait DynBasePage: DynComponent {
     unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
 }
 
-impl<T: BasePage> DynBasePage for T {
+impl<T: Page> DynBasePage for T {
     unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr> {
-        let route = <T as BasePage>::try_match_route(url_infos)?;
+        let route = <T as Page>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
     }
 }
 
 #[async_trait]
-pub trait DynPage: BasePage + Sync {
+pub trait DynPage: Page + Sync {
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
 }
 
@@ -200,7 +200,7 @@ mod test {
         }
     }
 
-    impl BasePage for MyPage {
+    impl Page for MyPage {
         type Route<'a> = MyRoute;
     }
 
