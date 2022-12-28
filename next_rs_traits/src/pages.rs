@@ -27,6 +27,13 @@ pub mod pages_ptr {
     // TODO: implement drop for them and deallocating the box in case it is dropped without being consummed
     // (early return, panic, future cancelling, ect...)
     // and use mem::forget when consuming.
+    // ! After further research, you need recreate the box to the correct type for it to deallocate.
+    // So Drop can be implemented for CastedPtr, but not for UntypedPtr.
+    // At least not in the current implementation, need further research but maybe UntypedPtr can
+    // hold the Layout of the type and use that to free it.
+    // ! Forget that, we need the concrete type for dropping the inner type.
+    // Other possibility would be to have dyn Any pointer, and recreating a Box<dyn Any> for deallocating
+    // The Vtable would have the drop function.
 
     // Route ptr wrapper:
 
