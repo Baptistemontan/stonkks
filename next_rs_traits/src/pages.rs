@@ -52,19 +52,13 @@ impl<T: Component> DynComponent for T {
 }
 
 pub trait DynBasePage: DynComponent {
-    unsafe fn try_match_route<'url>(
-        &self,
-        url_infos: &UrlInfos<'url>,
-    ) -> Option<RouteUntypedPtr<'url>>;
+    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>>;
 
     fn as_dyn_component(&self) -> &dyn DynComponent;
 }
 
 impl<T: Page> DynBasePage for T {
-    unsafe fn try_match_route<'url>(
-        &self,
-        url_infos: &UrlInfos<'url>,
-    ) -> Option<RouteUntypedPtr<'url>> {
+    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>> {
         let route = <T as Page>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
