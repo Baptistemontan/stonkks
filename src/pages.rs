@@ -18,7 +18,7 @@ impl Pages {
     pub fn find_dyn_page_and_route<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
-    ) -> Option<(&'_ dyn DynPageDyn, RouteUntypedPtr)> {
+    ) -> Option<(&'_ dyn DynPageDyn, RouteUntypedPtr<'url>)> {
         for page in &self.dyn_pages {
             unsafe {
                 if let Some(route) = page.try_match_route(url_infos) {

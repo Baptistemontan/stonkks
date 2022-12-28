@@ -2,6 +2,8 @@ use crate::pages::NotFoundPageProps;
 
 use super::pages::{Component, Page};
 
+use std::{mem, any::Any};
+
 // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
 // because they can only be created by either consuming one another
 // or by consumming the value, boxing it and then leaking the box, taking exclusive ownership of the pointer.
@@ -18,83 +20,147 @@ use super::pages::{Component, Page};
 // ! Forget that, we need the concrete type for dropping the inner type.
 // Other possibility would be to have dyn Any pointer, and recreating a Box<dyn Any> for deallocating
 // The Vtable would have the drop function.
+// ! Yep not possible, Any is not implemented for types that borrow
+// so can't constrain Route to implement Any
+// technically what we just need is dyn whatever-trait
+// we could create a trait that take a pointer to self and return a pointer to that dyn trait
+// like:
 
-// Route ptr wrapper:
+pub trait DynLifetime<'a>: 'a {}
+
+impl<'a, T: 'a> DynLifetime<'a> for T {}
 
 pub struct RouteCastedPtr<'a, T: Page>(*mut T::Route<'a>);
-pub struct RouteUntypedPtr(*mut ());
+pub struct RouteUntypedPtr<'a>(*mut dyn DynLifetime<'a>);
 
-impl<'a, T: Page> From<RouteUntypedPtr> for RouteCastedPtr<'a, T> {
-    fn from(RouteUntypedPtr(route_ptr): RouteUntypedPtr) -> Self {
-        RouteCastedPtr(route_ptr as *mut _)
+impl<'a, T: Page> From<RouteUntypedPtr<'a>> for RouteCastedPtr<'a, T> {
+    fn from(route_ptr: RouteUntypedPtr) -> Self {
+        let ptr = route_ptr.leak();
+        RouteCastedPtr(ptr as *mut _)
     }
 }
 
 impl<'a, T: Page> RouteCastedPtr<'a, T> {
+    pub fn leak(self) -> *mut T::Route<'a> {
+        let ptr = self.0;
+        mem::forget(self);
+        ptr
+    }
+
     pub unsafe fn into_inner(self) -> T::Route<'a> {
-        let route = Box::from_raw(self.0);
+        let route_ptr = self.leak();
+        let route = Box::from_raw(route_ptr);
         *route
     }
 }
 
-unsafe impl<'a, T: Page> Send for RouteCastedPtr<'a, T> where T::Route<'a>: Send {}
+unsafe impl<'a, T: Page> Send for RouteCastedPtr<'a, T> {}
 
-impl RouteUntypedPtr {
-    pub fn new<'a, T: Page>(route: T::Route<'a>) -> Self
-    where
-        T::Route<'a>: Send,
-    {
-        let boxed_route = Box::new(route);
-        let ptr = Box::leak(boxed_route) as *mut _ as *mut ();
-        RouteUntypedPtr(ptr)
-    }
-
-    pub unsafe fn cast<'a, T: Page>(self) -> RouteCastedPtr<'a, T> {
-        self.into()
+impl<'a, T: Page> Drop for RouteCastedPtr<'a, T> {
+    fn drop(&mut self) {
+        unsafe {
+            let value: Box<T::Route<'a>> = Box::from_raw(self.0);
+            drop(value);
+        }
     }
 }
 
-// RouteUntypePtr can only be constructed if the concrete type implement Send
-unsafe impl Send for RouteUntypedPtr {}
+impl<'a> RouteUntypedPtr<'a> {
+    pub fn new<T: Page>(route: T::Route<'a>) -> Self {
+        let boxed_route = Box::new(route);
+        let ptr = Box::leak(boxed_route) as *mut _ ;
+        RouteUntypedPtr(ptr)
+    }
+
+    pub unsafe fn cast<T: Page>(self) -> RouteCastedPtr<'a, T> {
+        self.into()
+    }
+
+    pub fn leak(self) -> *mut dyn DynLifetime<'a> {
+        let ptr = self.0;
+        mem::forget(self);
+        ptr
+    }
+}
+
+impl<'a> Drop for RouteUntypedPtr<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            let value: Box<dyn DynLifetime> = Box::from_raw(self.0);
+            drop(value);
+        }
+    }
+} 
+
+unsafe impl<'a> Send for RouteUntypedPtr<'a> {}
 
 // Props ptr wrapper:
 
-pub struct PropsCastedPtr<T: Component>(pub *mut T::Props);
-pub struct PropsUntypedPtr(pub *mut ());
+pub struct PropsCastedPtr<T: Component>(*mut T::Props);
+pub struct PropsUntypedPtr(*mut dyn Any);
 
 impl<T: Component> From<PropsUntypedPtr> for PropsCastedPtr<T> {
-    fn from(PropsUntypedPtr(props_ptr): PropsUntypedPtr) -> Self {
-        PropsCastedPtr(props_ptr as *mut _)
+    fn from(props_ptr: PropsUntypedPtr) -> Self {
+        let ptr = props_ptr.leak();
+        PropsCastedPtr(ptr as *mut _)
     }
 }
 
 impl<T: Component> PropsCastedPtr<T> {
     pub unsafe fn into_inner(self) -> T::Props {
-        let props = Box::from_raw(self.0);
+        let ptr = self.leak();
+        let props = Box::from_raw(ptr);
         *props
+    }
+
+    pub fn leak(self) -> *mut T::Props {
+        let ptr = self.0;
+        mem::forget(self);
+        ptr
     }
 }
 
-unsafe impl<T: Component> Send for PropsCastedPtr<T> where T::Props: Send {}
+unsafe impl<T: Component> Send for PropsCastedPtr<T> {}
+
+impl<T: Component> Drop for PropsCastedPtr<T> {
+    fn drop(&mut self) {
+        unsafe {
+            let value: Box<T::Props> = Box::from_raw(self.0);
+            drop(value);
+        }
+    }
+}
 
 impl PropsUntypedPtr {
-    pub fn new<T: Page>(props: T::Props) -> Self
-    where
-        T::Props: Send,
-    {
+    pub fn new<T: Page>(props: T::Props) -> Self {
         let boxed_props = Box::new(props);
-        let ptr = Box::leak(boxed_props) as *mut _ as *mut ();
+        let ptr = Box::leak(boxed_props) as *mut _;
         PropsUntypedPtr(ptr)
     }
 
     pub fn new_not_found_props(props: NotFoundPageProps) -> Self {
         let boxed_unit = Box::new(props);
-        let ptr = Box::leak(boxed_unit) as *mut _ as *mut ();
+        let ptr = Box::leak(boxed_unit) as *mut _;
         PropsUntypedPtr(ptr)
     }
 
     pub unsafe fn cast<T: Page>(self) -> PropsCastedPtr<T> {
         self.into()
+    }
+
+    pub fn leak(self) -> *mut dyn Any {
+        let ptr = self.0;
+        mem::forget(self);
+        ptr
+    }
+}
+
+impl Drop for PropsUntypedPtr {
+    fn drop(&mut self) {
+        unsafe {
+            let value: Box<dyn Any> = Box::from_raw(self.0);
+            drop(value);
+        }
     }
 }
 

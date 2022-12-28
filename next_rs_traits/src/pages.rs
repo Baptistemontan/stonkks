@@ -6,7 +6,7 @@ use super::pointers::*;
 use super::predule::*;
 
 pub trait Component {
-    type Props;
+    type Props: Send + 'static;
 
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
@@ -52,13 +52,13 @@ impl<T: Component> DynComponent for T {
 }
 
 pub trait DynBasePage: DynComponent {
-    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
+    unsafe fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>>;
 
     fn as_dyn_component(&self) -> &dyn DynComponent;
 }
 
 impl<T: Page> DynBasePage for T {
-    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr> {
+    unsafe fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>> {
         let route = <T as Page>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
@@ -70,25 +70,19 @@ impl<T: Page> DynBasePage for T {
 }
 
 #[async_trait]
-pub trait DynPage: Page + Sync
-where
-    Self::Props: Send,
-{
+pub trait DynPage: Page + Sync {
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
 }
 
 #[async_trait]
 pub trait DynPageDyn: DynBasePage {
-    async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr; // IndexRoute -> IndexPageProps
+    async unsafe fn get_server_props<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> PropsUntypedPtr; // IndexRoute -> IndexPageProps
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
 
 #[async_trait]
-impl<T: DynPage> DynPageDyn for T
-where
-    T::Props: Send,
-{
-    async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr {
+impl<T: DynPage> DynPageDyn for T {
+    async unsafe fn get_server_props<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> PropsUntypedPtr {
         let route_casted_ptr: RouteCastedPtr<T> = route_ptr.into();
         let route = route_casted_ptr.into_inner();
         let props = <T as DynPage>::get_server_props(route).await;
