@@ -50,6 +50,7 @@ impl Pages {
 #[cfg(test)]
 mod test {
     use async_trait::async_trait;
+    use next_rs_traits::pages::Component;
     use sycamore::prelude::*;
 
     use super::*;
@@ -69,9 +70,7 @@ mod test {
         }
     }
 
-    impl BasePage for MyPage {
-        type Route<'a> = MyRoute<'a>;
-
+    impl Component for MyPage {
         type Props = String;
 
         fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G> {
@@ -81,6 +80,10 @@ mod test {
                 }
             }
         }
+    }
+
+    impl BasePage for MyPage {
+        type Route<'a> = MyRoute<'a>;
     }
 
     #[async_trait]

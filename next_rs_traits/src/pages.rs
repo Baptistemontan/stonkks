@@ -4,19 +4,22 @@ use sycamore::prelude::*;
 
 use super::predule::*;
 
-pub trait BasePage {
-    type Route<'a>: Route<'a>;
+pub trait Component {
     type Props: Send;
-
-    fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
-        Self::Route::try_from_url(url_infos)
-    }
 
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
 
+pub trait BasePage: Component {
+    type Route<'a>: Route<'a>;
+
+    fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
+        Self::Route::try_from_url(url_infos)
+    }
+}
+
 pub mod pages_ptr {
-    use super::BasePage;
+    use super::{BasePage, Component};
 
     // Those pointer wrappers garanties that they have exclusive acces to the underlying pointer,
     // because they can only be created by either consuming one another
@@ -71,23 +74,23 @@ pub mod pages_ptr {
 
     // Props ptr wrapper:
 
-    pub struct PropsCastedPtr<T: BasePage>(pub *mut T::Props);
+    pub struct PropsCastedPtr<T: Component>(pub *mut T::Props);
     pub struct PropsUntypedPtr(pub *mut ());
 
-    impl<T: BasePage> From<PropsUntypedPtr> for PropsCastedPtr<T> {
+    impl<T: Component> From<PropsUntypedPtr> for PropsCastedPtr<T> {
         fn from(PropsUntypedPtr(props_ptr): PropsUntypedPtr) -> Self {
             PropsCastedPtr(props_ptr as *mut _)
         }
     }
 
-    impl<T: BasePage> PropsCastedPtr<T> {
+    impl<T: Component> PropsCastedPtr<T> {
         pub unsafe fn into_inner(self) -> T::Props {
             let props = Box::from_raw(self.0);
             *props
         }
     }
 
-    unsafe impl<T: BasePage> Send for PropsCastedPtr<T> {}
+    unsafe impl<T: Component> Send for PropsCastedPtr<T> {}
 
     impl PropsUntypedPtr {
         pub fn new<T: BasePage>(props: T::Props) -> Self {
@@ -106,11 +109,34 @@ pub mod pages_ptr {
 
 use pages_ptr::*;
 
-pub trait DynBasePage {
-    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
+pub trait DynComponent {
     unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> View<DomNode>;
     unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> View<SsrNode>;
     unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> View<HydrateNode>;
+}
+
+impl<T: Component> DynComponent for T {
+    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as Component>::render(cx, props)
+    }
+
+    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as Component>::render(cx, props)
+    }
+
+    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
+        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
+        let props = props_casted_ptr.into_inner();
+        <T as Component>::render(cx, props)
+    }
+}
+
+pub trait DynBasePage: DynComponent {
+    unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;
 }
 
 impl<T: BasePage> DynBasePage for T {
@@ -118,24 +144,6 @@ impl<T: BasePage> DynBasePage for T {
         let route = <T as BasePage>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
-    }
-
-    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
-        <T as BasePage>::render(cx, props)
-    }
-
-    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
-        <T as BasePage>::render(cx, props)
-    }
-
-    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner();
-        <T as BasePage>::render(cx, props)
     }
 }
 
@@ -180,9 +188,7 @@ mod test {
         }
     }
 
-    impl BasePage for MyPage {
-        type Route<'a> = MyRoute;
-
+    impl Component for MyPage {
         type Props = ();
 
         fn render<G: Html>(cx: Scope, _props: Self::Props) -> View<G> {
@@ -192,6 +198,10 @@ mod test {
                 }
             }
         }
+    }
+
+    impl BasePage for MyPage {
+        type Route<'a> = MyRoute;
     }
 
     #[test]
