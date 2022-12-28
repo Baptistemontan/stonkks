@@ -64,13 +64,14 @@ impl Pages {
         )
     }
 
-    pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> String {
+    pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> (String, String) {
         let (page, props) = self.find_page_and_props(url_infos).await;
+        let serialized_props = unsafe { page.serialize_props(&props).unwrap() };
         let html = sycamore::render_to_string(|cx| {
             let props = unsafe { page.render_server(cx, props) };
             self.layout.render_server(cx, props)
         });
-        html
+        (html, serialized_props)
     }
 
     pub fn dyn_page<T: DynPage + 'static>(mut self, page: T) -> Self

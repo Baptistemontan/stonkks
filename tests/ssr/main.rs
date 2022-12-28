@@ -104,7 +104,7 @@ async fn test_dyn_page() {
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let rendered_html = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
 
     assert!(rendered_html.contains(greeting));
 }
@@ -140,7 +140,7 @@ async fn test_layout() {
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let rendered_html = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -156,7 +156,7 @@ async fn test_default_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let rendered_html = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -172,7 +172,7 @@ async fn test_custom_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let rendered_html = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
