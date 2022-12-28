@@ -93,17 +93,11 @@ fn test_routing() {
     let page = MyPage;
     let dyn_page: Box<dyn DynBasePage> = Box::new(page);
     let url_infos = UrlInfos::parse_from_url("/about");
-    unsafe {
-        assert!(dyn_page.try_match_route(&url_infos).is_none());
-    }
+    assert!(dyn_page.try_match_route(&url_infos).is_none());
     let url_infos = UrlInfos::parse_from_url("/index/other");
-    unsafe {
-        assert!(dyn_page.try_match_route(&url_infos).is_some());
-    }
+    assert!(dyn_page.try_match_route(&url_infos).is_some());
     let url_infos = UrlInfos::parse_from_url("/index");
-    unsafe {
-        assert!(dyn_page.try_match_route(&url_infos).is_none());
-    }
+    assert!(dyn_page.try_match_route(&url_infos).is_none());
 
     let props: &str = "Greetings!";
 
