@@ -4,6 +4,24 @@ use sycamore::{prelude::*, render_to_string};
 use next_rs_traits::pages::DynBasePage;
 use next_rs_traits::pages::pages_ptr::*;
 
+struct MyLayout;
+
+impl Layout for MyLayout {
+    fn render<'a, G: Html>(cx: Scope<'a>, props: View<G>) -> View<G> {
+        view! { cx,
+            h1 {
+                "This is a Title"
+            }
+            div {
+                (props)
+            }
+            p {
+                "test paragraphe"
+            }
+        }
+    }
+}
+
 struct MyPage;
 
 struct MyRoute<'a>(&'a str);
@@ -52,7 +70,7 @@ async fn test_dyn_page() {
     let url_infos = UrlInfos::parse_from_url(&url);
 
     let rendered_html = pages.render_to_string(&url_infos).await.unwrap();
-    println!("{}", rendered_html);
+
     assert!(rendered_html.contains(greeting));
 }
 
@@ -82,4 +100,25 @@ fn test_routing() {
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));
+}
+
+#[tokio::test]
+async fn test_layout() {
+    let greeting = "test_greeting";
+    let url = format!("index/{}", greeting);
+
+    let pages = Pages::new()
+        .dyn_page(MyPage)
+        .with_layout(MyLayout);
+
+    let url_infos = UrlInfos::parse_from_url(&url);
+
+    let rendered_html = pages.render_to_string(&url_infos).await.unwrap();
+
+    println!("{}", rendered_html);
+
+    assert!(rendered_html.contains(greeting));
+    assert!(rendered_html.contains("</h1>")); // check for closing tag, opening tag could have some data on it
+    assert!(rendered_html.contains("Title"));
+    assert!(rendered_html.contains("test paragraphe"));
 }
