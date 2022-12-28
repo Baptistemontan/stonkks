@@ -37,14 +37,14 @@ pub mod pages_ptr {
 
     // Route ptr wrapper:
 
-    pub struct RouteCastedPtr<'a, T: BasePage>(* mut T::Route<'a>);
-    pub struct RouteUntypedPtr(* mut ());
+    pub struct RouteCastedPtr<'a, T: BasePage>(*mut T::Route<'a>);
+    pub struct RouteUntypedPtr(*mut ());
 
     impl<'a, T: BasePage> From<RouteUntypedPtr> for RouteCastedPtr<'a, T> {
         fn from(RouteUntypedPtr(route_ptr): RouteUntypedPtr) -> Self {
-            RouteCastedPtr(route_ptr as * mut _)
+            RouteCastedPtr(route_ptr as *mut _)
         }
-    } 
+    }
 
     impl<'a, T: BasePage> RouteCastedPtr<'a, T> {
         pub unsafe fn into_inner(self) -> T::Route<'a> {
@@ -58,7 +58,7 @@ pub mod pages_ptr {
     impl RouteUntypedPtr {
         pub fn new<'a, T: BasePage>(route: T::Route<'a>) -> Self {
             let boxed_route = Box::new(route);
-            let ptr = Box::leak(boxed_route) as * mut _ as * mut ();
+            let ptr = Box::leak(boxed_route) as *mut _ as *mut ();
             RouteUntypedPtr(ptr)
         }
 
@@ -71,14 +71,14 @@ pub mod pages_ptr {
 
     // Props ptr wrapper:
 
-    pub struct PropsCastedPtr<T: BasePage>(pub * mut T::Props);
-    pub struct PropsUntypedPtr(pub * mut ());
+    pub struct PropsCastedPtr<T: BasePage>(pub *mut T::Props);
+    pub struct PropsUntypedPtr(pub *mut ());
 
     impl<T: BasePage> From<PropsUntypedPtr> for PropsCastedPtr<T> {
         fn from(PropsUntypedPtr(props_ptr): PropsUntypedPtr) -> Self {
-            PropsCastedPtr(props_ptr as * mut _)
+            PropsCastedPtr(props_ptr as *mut _)
         }
-    } 
+    }
 
     impl<T: BasePage> PropsCastedPtr<T> {
         pub unsafe fn into_inner(self) -> T::Props {
@@ -92,7 +92,7 @@ pub mod pages_ptr {
     impl PropsUntypedPtr {
         pub fn new<T: BasePage>(props: T::Props) -> Self {
             let boxed_props = Box::new(props);
-            let ptr = Box::leak(boxed_props) as * mut _ as * mut ();
+            let ptr = Box::leak(boxed_props) as *mut _ as *mut ();
             PropsUntypedPtr(ptr)
         }
 
@@ -102,13 +102,9 @@ pub mod pages_ptr {
     }
 
     unsafe impl Send for PropsUntypedPtr {}
-
-
 }
 
 use pages_ptr::*;
-
-
 
 pub trait DynBasePage {
     unsafe fn try_match_route(&self, url_infos: &UrlInfos) -> Option<RouteUntypedPtr>;

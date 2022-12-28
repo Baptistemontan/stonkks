@@ -1,5 +1,6 @@
 use super::prelude::*;
 use next_rs_traits::pages::pages_ptr::*;
+use next_rs_traits::pages::{DynBasePage, DynPageDyn};
 
 #[derive(Default)]
 pub struct Pages {
@@ -30,17 +31,13 @@ impl Pages {
         url_infos: &UrlInfos<'url>,
     ) -> Option<(&'_ dyn DynPageDyn, PropsUntypedPtr)> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
-        let props = unsafe {
-            page.get_server_props(route).await
-        };
+        let props = unsafe { page.get_server_props(route).await };
         Some((page, props))
     }
 
     pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<String> {
         let (page, props) = self.find_dyn_page_and_props(url_infos).await?;
-        let html = sycamore::render_to_string(|cx| unsafe {
-            page.render_server(cx, props)
-        });
+        let html = sycamore::render_to_string(|cx| unsafe { page.render_server(cx, props) });
         Some(html)
     }
 
@@ -66,9 +63,7 @@ mod test {
             let mut iter = url.segments().iter();
 
             match (iter.next(), iter.next(), iter.next()) {
-                (Some(value), Some(greeting), None) if value == &"index" => {
-                    Some(MyRoute(greeting))
-                }
+                (Some(value), Some(greeting), None) if value == &"index" => Some(MyRoute(greeting)),
                 _ => None,
             }
         }
