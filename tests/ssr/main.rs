@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use next_rs::prelude::*;
-use sycamore::{prelude::*, render_to_string};
 use next_rs_traits::pages::DynBasePage;
-use next_rs_traits::pages::pages_ptr::*;
+use next_rs_traits::pointers::*;
+use sycamore::{prelude::*, render_to_string};
 
 struct MyLayout;
 
@@ -107,9 +107,7 @@ async fn test_layout() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
-    let pages = Pages::new()
-        .dyn_page(MyPage)
-        .with_layout(MyLayout);
+    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout);
 
     let url_infos = UrlInfos::parse_from_url(&url);
 

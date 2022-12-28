@@ -1,5 +1,6 @@
 pub mod layout;
 pub mod pages;
+pub mod pointers;
 pub mod routes;
 
 pub mod predule {

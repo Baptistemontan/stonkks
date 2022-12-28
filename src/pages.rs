@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::pages_ptr::*;
 use next_rs_traits::pages::DynPageDyn;
+use next_rs_traits::pointers::*;
 
 use sycamore::prelude::*;
 
