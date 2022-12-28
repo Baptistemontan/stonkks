@@ -54,7 +54,7 @@ impl<'a, T: Page> Drop for RouteCastedPtr<'a, T> {
 impl<'a> RouteUntypedPtr<'a> {
     pub fn new<T: Page>(route: T::Route<'a>) -> Self {
         let boxed_route = Box::new(route);
-        let ptr = Box::leak(boxed_route) as *mut _;
+        let ptr = Box::into_raw(boxed_route) as *mut _;
         RouteUntypedPtr(ptr)
     }
 
@@ -124,13 +124,13 @@ impl<T: Component> Drop for PropsCastedPtr<T> {
 impl PropsUntypedPtr {
     pub fn new<T: Page>(props: T::Props) -> Self {
         let boxed_props = Box::new(props);
-        let ptr = Box::leak(boxed_props) as *mut _;
+        let ptr = Box::into_raw(boxed_props) as *mut _;
         PropsUntypedPtr(ptr)
     }
 
     pub fn new_not_found_props(props: NotFoundPageProps) -> Self {
         let boxed_unit = Box::new(props);
-        let ptr = Box::leak(boxed_unit) as *mut _;
+        let ptr = Box::into_raw(boxed_unit) as *mut _;
         PropsUntypedPtr(ptr)
     }
 
