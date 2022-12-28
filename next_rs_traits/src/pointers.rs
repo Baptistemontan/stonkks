@@ -8,30 +8,25 @@ use std::{mem, any::Any};
 // because they can only be created by either consuming one another
 // or by consumming the value, boxing it and then leaking the box, taking exclusive ownership of the pointer.
 // They are finally consummed when converting to the inner type.
-// They are made for moving data in a untyped, unlifetimed(?) maner for props and routes.
+// They are made for moving data maner for props and routes.
+// Those pointers act like a box, if they are drop without being consummed the data is still being dropped
+// if you want access to the contained pointer use Ptr::leak(), this will return the pointer and mem::forget the pointer.
 
-// TODO: implement drop for them and deallocating the box in case it is dropped without being consummed
-// (early return, panic, future cancelling, ect...)
-// and use mem::forget when consuming.
-// ! After further research, you need recreate the box to the correct type for it to deallocate.
-// So Drop can be implemented for CastedPtr, but not for UntypedPtr.
-// At least not in the current implementation, need further research but maybe UntypedPtr can
-// hold the Layout of the type and use that to free it.
-// ! Forget that, we need the concrete type for dropping the inner type.
-// Other possibility would be to have dyn Any pointer, and recreating a Box<dyn Any> for deallocating
-// The Vtable would have the drop function.
-// ! Yep not possible, Any is not implemented for types that borrow
-// so can't constrain Route to implement Any
-// technically what we just need is dyn whatever-trait
-// we could create a trait that take a pointer to self and return a pointer to that dyn trait
-// like:
 
-pub trait DynLifetime<'a>: 'a {}
+// After Reconsideration, with everything I've learned creating these pointers, 
+// There is a good chance I can do the exact same thing in safe rust.
+// might need to take a look. The real MVP in there is probably the `LiftimedAny` Trait,
+// The inital problem happened when working with the async trait, <dyn Any> did not provide enough
+// informations for the all mighty Borrow checker.
+// but with the lifetimed counterpart it's another thing.
 
-impl<'a, T: 'a> DynLifetime<'a> for T {}
+
+pub trait LifetimedAny<'a>: 'a {}
+
+impl<'a, T: 'a> LifetimedAny<'a> for T {}
 
 pub struct RouteCastedPtr<'a, T: Page>(*mut T::Route<'a>);
-pub struct RouteUntypedPtr<'a>(*mut dyn DynLifetime<'a>);
+pub struct RouteUntypedPtr<'a>(*mut dyn LifetimedAny<'a>);
 
 impl<'a, T: Page> From<RouteUntypedPtr<'a>> for RouteCastedPtr<'a, T> {
     fn from(route_ptr: RouteUntypedPtr) -> Self {
@@ -76,7 +71,7 @@ impl<'a> RouteUntypedPtr<'a> {
         self.into()
     }
 
-    pub fn leak(self) -> *mut dyn DynLifetime<'a> {
+    pub fn leak(self) -> *mut dyn LifetimedAny<'a> {
         let ptr = self.0;
         mem::forget(self);
         ptr
@@ -86,7 +81,7 @@ impl<'a> RouteUntypedPtr<'a> {
 impl<'a> Drop for RouteUntypedPtr<'a> {
     fn drop(&mut self) {
         unsafe {
-            let value: Box<dyn DynLifetime> = Box::from_raw(self.0);
+            let value: Box<dyn LifetimedAny> = Box::from_raw(self.0);
             drop(value);
         }
     }
