@@ -73,6 +73,11 @@ impl Pages {
         self
     }
 
+    pub fn not_found<T: NotFoundPage>(mut self, not_found: T) -> Self {
+        self.not_found_page = not_found.into();
+        self
+    }
+
     // pub fn render_client<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<String> {
     //     let (page, props) = self.find_dyn_page_and_props(url_infos).await?;
     //     let html = sycamore::render(|cx| {
