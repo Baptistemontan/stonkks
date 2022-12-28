@@ -1,10 +1,21 @@
 use super::prelude::*;
 use next_rs_traits::pages::pages_ptr::*;
-use next_rs_traits::pages::{DynBasePage, DynPageDyn};
+use next_rs_traits::pages::{DynBasePage, DynPageDyn, DynComponent};
+
+// struct DefaultLayout;
+
+// impl Component for DefaultLayout {
+//     type Props = ;
+
+//     fn render<G: sycamore::web::Html>(cx: sycamore::reactive::Scope, props: Self::Props) -> sycamore::view::View<G> {
+//         todo!()
+//     }
+// }
 
 #[derive(Default)]
 pub struct Pages {
     dyn_pages: Vec<Box<dyn DynPageDyn>>,
+    // layout: Box<dyn DynComponent>
 }
 
 impl Pages {
@@ -41,7 +52,9 @@ impl Pages {
         Some(html)
     }
 
-    pub fn dyn_route<T: DynPage + 'static>(mut self, page: T) -> Self {
+    pub fn dyn_page<T: DynPage + 'static>(mut self, page: T) -> Self 
+        where T::Props: Send
+    {
         self.dyn_pages.push(Box::new(page));
         self
     }
@@ -98,7 +111,7 @@ mod test {
         let greeting = "test_greeting";
         let url = format!("index/{}", greeting);
 
-        let pages = Pages::new().dyn_route(MyPage);
+        let pages = Pages::new().dyn_page(MyPage);
 
         let url_infos = UrlInfos::parse_from_url(&url);
 

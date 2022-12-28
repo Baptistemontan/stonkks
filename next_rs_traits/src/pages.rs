@@ -5,7 +5,7 @@ use sycamore::prelude::*;
 use super::predule::*;
 
 pub trait Component {
-    type Props: Send;
+    type Props;
 
     fn render<G: Html>(cx: Scope, props: Self::Props) -> View<G>;
 }
@@ -56,10 +56,12 @@ pub mod pages_ptr {
         }
     }
 
-    unsafe impl<'a, T: Page> Send for RouteCastedPtr<'a, T> {}
+    unsafe impl<'a, T: Page> Send for RouteCastedPtr<'a, T> where T::Route<'a>: Send {}
 
     impl RouteUntypedPtr {
-        pub fn new<'a, T: Page>(route: T::Route<'a>) -> Self {
+        pub fn new<'a, T: Page>(route: T::Route<'a>) -> Self
+            where T::Route<'a>: Send
+        {
             let boxed_route = Box::new(route);
             let ptr = Box::leak(boxed_route) as *mut _ as *mut ();
             RouteUntypedPtr(ptr)
@@ -70,6 +72,7 @@ pub mod pages_ptr {
         }
     }
 
+    // RouteUntypePtr can only be constructed if the concrete type implement Send
     unsafe impl Send for RouteUntypedPtr {}
 
     // Props ptr wrapper:
@@ -90,10 +93,12 @@ pub mod pages_ptr {
         }
     }
 
-    unsafe impl<T: Component> Send for PropsCastedPtr<T> {}
+    unsafe impl<T: Component> Send for PropsCastedPtr<T> where T::Props: Send {}
 
     impl PropsUntypedPtr {
-        pub fn new<T: Page>(props: T::Props) -> Self {
+        pub fn new<T: Page>(props: T::Props) -> Self
+            where T::Props: Send
+        {
             let boxed_props = Box::new(props);
             let ptr = Box::leak(boxed_props) as *mut _ as *mut ();
             PropsUntypedPtr(ptr)
@@ -104,6 +109,7 @@ pub mod pages_ptr {
         }
     }
 
+    // same as RouteUntypePtr, can only be created if T is send
     unsafe impl Send for PropsUntypedPtr {}
 }
 
@@ -148,7 +154,9 @@ impl<T: Page> DynBasePage for T {
 }
 
 #[async_trait]
-pub trait DynPage: Page + Sync {
+pub trait DynPage: Page + Sync
+    where Self::Props: Send,
+{
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
 }
 
@@ -158,7 +166,9 @@ pub trait DynPageDyn: DynBasePage {
 }
 
 #[async_trait]
-impl<T: DynPage> DynPageDyn for T {
+impl<T: DynPage> DynPageDyn for T
+    where T::Props: Send
+{
     async unsafe fn get_server_props(&self, route_ptr: RouteUntypedPtr) -> PropsUntypedPtr {
         let route_casted_ptr: RouteCastedPtr<T> = route_ptr.into();
         let route = route_casted_ptr.into_inner();
