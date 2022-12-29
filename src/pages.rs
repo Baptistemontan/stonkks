@@ -1,8 +1,6 @@
-use next_rs_traits::pages::{DynPageDyn, DynBasePage};
-use next_rs_traits::pointers::*;
 use super::prelude::*;
-
-
+use next_rs_traits::pages::{DynBasePage, DynPageDyn};
+use next_rs_traits::pointers::*;
 
 #[derive(Default)]
 pub struct DynPages(Vec<Box<dyn DynPageDyn>>);
@@ -34,5 +32,5 @@ impl DynPages {
 
     pub fn iter_as_base_page(&self) -> impl IntoIterator<Item = &'_ dyn DynBasePage> {
         self.0.iter().map(|page| page.as_dyn_base_page())
-    } 
+    }
 }

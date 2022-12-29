@@ -4,7 +4,7 @@ use sycamore::prelude::*;
 use super::pointers::*;
 use super::predule::*;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Error;
 
 pub type ComponentReactiveProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;

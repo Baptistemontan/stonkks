@@ -1,8 +1,8 @@
 use super::default::{AppLayout, NotFound};
+use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::pages::{DynBasePage, DynComponent};
 use next_rs_traits::pointers::*;
-use super::pages::{DynPages};
 
 #[derive(Default)]
 pub struct App {
@@ -38,10 +38,7 @@ impl App {
         if let Some((page, props)) = self.dyn_pages.find_dyn_page_and_props(url_infos).await {
             return (page.as_dyn_component(), props);
         }
-        (
-            &*self.not_found_page,
-            NotFoundPageProps::new_untyped()
-        )
+        (&*self.not_found_page, NotFoundPageProps::new_untyped())
     }
 
     pub async fn render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> (String, String) {

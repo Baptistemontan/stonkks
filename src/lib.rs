@@ -1,11 +1,11 @@
+mod app;
 mod default;
 mod pages;
-mod app;
 
 pub mod prelude {
     use super::*;
-    pub use next_rs_traits::predule::*;
     pub use app::App;
+    pub use next_rs_traits::predule::*;
 }
 
 // use sycamore::prelude::*;

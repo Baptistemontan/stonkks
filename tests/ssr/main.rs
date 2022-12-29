@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use next_rs::prelude::*;
 use next_rs_traits::pages::DynBasePage;
 use next_rs_traits::pointers::*;
+use serde::{Deserialize, Serialize};
 use sycamore::{prelude::*, render_to_string};
-use serde::{Serialize, Deserialize};
 
 struct MyLayout;
 
@@ -125,7 +125,8 @@ fn test_routing() {
     let dyn_ssr_view = render_to_string(|cx| unsafe {
         dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())))
     });
-    let ssr_view = render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
+    let ssr_view =
+        render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));
