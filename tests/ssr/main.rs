@@ -23,7 +23,7 @@ impl Layout for MyLayout {
     }
 }
 
-struct MyPage;
+struct MyDynPage;
 
 struct MyRoute<'a>(&'a str);
 
@@ -58,10 +58,10 @@ impl<'a> ReactiveProps<'a> for MyReactiveProps<'a> {
     type Props = MyProps;
 }
 
-impl Component for MyPage {
+impl Component for MyDynPage {
     type Props = MyProps;
 
-    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G> {
+    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentReactiveProps<'a, Self>) -> View<G> {
         view! { cx,
             p {
                 (props.0.get())
@@ -70,12 +70,12 @@ impl Component for MyPage {
     }
 }
 
-impl Page for MyPage {
+impl Page for MyDynPage {
     type Route<'a> = MyRoute<'a>;
 }
 
 #[async_trait]
-impl DynPage for MyPage {
+impl DynPage for MyDynPage {
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props {
         MyProps(route.0.to_string())
     }
@@ -86,7 +86,7 @@ struct MyNotFound;
 impl Component for MyNotFound {
     type Props = NotFoundPageProps;
 
-    fn render<'a, G: Html>(cx: Scope<'a>, _props: ComponentProps<'a, Self>) -> View<G> {
+    fn render<'a, G: Html>(cx: Scope<'a>, _props: ComponentReactiveProps<'a, Self>) -> View<G> {
         view! { cx,
             p {
                 "Custom not found page"
@@ -100,7 +100,7 @@ async fn test_dyn_page() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
-    let pages = Pages::new().dyn_page(MyPage);
+    let pages = App::new().dyn_page(MyDynPage);
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
@@ -111,7 +111,7 @@ async fn test_dyn_page() {
 
 #[test]
 fn test_routing() {
-    let page = MyPage;
+    let page = MyDynPage;
     let dyn_page: Box<dyn DynBasePage> = Box::new(page);
     let url_infos = UrlInfos::parse_from_url("/about");
     assert!(dyn_page.try_match_route(&url_infos).is_none());
@@ -123,9 +123,9 @@ fn test_routing() {
     let props: &str = "Greetings!";
 
     let dyn_ssr_view = render_to_string(|cx| unsafe {
-        dyn_page.render_server(cx, PropsUntypedPtr::new::<MyPage>(MyProps(props.into())))
+        dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())))
     });
-    let ssr_view = render_to_string(|cx| MyPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
+    let ssr_view = render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));
@@ -136,7 +136,7 @@ async fn test_layout() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
-    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout);
+    let pages = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
@@ -152,7 +152,7 @@ async fn test_layout() {
 
 #[tokio::test]
 async fn test_default_not_found() {
-    let pages = Pages::new().dyn_page(MyPage).with_layout(MyLayout);
+    let pages = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
@@ -165,8 +165,8 @@ async fn test_default_not_found() {
 
 #[tokio::test]
 async fn test_custom_not_found() {
-    let pages = Pages::new()
-        .dyn_page(MyPage)
+    let pages = App::new()
+        .dyn_page(MyDynPage)
         .with_layout(MyLayout)
         .not_found(MyNotFound);
 

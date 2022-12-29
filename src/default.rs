@@ -47,7 +47,7 @@ struct DefaultNotFound;
 impl Component for DefaultNotFound {
     type Props = NotFoundPageProps;
 
-    fn render<'a, G: Html>(cx: Scope<'a>, _props: ComponentProps<'a, Self>) -> View<G> {
+    fn render<'a, G: Html>(cx: Scope<'a>, _props: ComponentReactiveProps<'a, Self>) -> View<G> {
         view! { cx,
             h1 {
                 "Page not found."

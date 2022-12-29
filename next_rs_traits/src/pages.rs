@@ -7,12 +7,12 @@ use super::predule::*;
 use serde::{Serialize, Deserialize};
 use serde_json::Error;
 
-pub type ComponentProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
+pub type ComponentReactiveProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
 pub trait Component {
     type Props: Props;
 
-    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentProps<'a, Self>) -> View<G>;
+    fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentReactiveProps<'a, Self>) -> View<G>;
     fn serialize_props(props: &Self::Props) -> Result<String, Error> {
         serde_json::to_string(props)
     }
