@@ -1,8 +1,13 @@
+use crate::client::Client;
+
 use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynComponent, DynPageDyn};
+
+pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";
+pub const NEXT_RS_WINDOW_OBJECT_KEY: &str = "__NEXT_RS__";
 
 #[derive(Default)]
 pub struct App {

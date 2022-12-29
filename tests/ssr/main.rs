@@ -106,7 +106,7 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
-    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
+    let rendered_html = server.render_to_string(&url_infos).await;
 
     assert!(rendered_html.contains(greeting));
 }
@@ -145,7 +145,7 @@ async fn test_layout() {
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
+    let rendered_html = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -162,7 +162,7 @@ async fn test_default_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
+    let rendered_html = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -180,9 +180,27 @@ async fn test_custom_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
+    let rendered_html = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
     assert!(rendered_html.contains("Custom not found"));
+}
+
+#[tokio::test]
+async fn test_dyn_page_total_render() {
+    let greeting = "test_greeting";
+    let url = format!("index/{}", greeting);
+
+    let app = App::new().dyn_page(MyDynPage);
+
+    let url_infos = UrlInfos::parse_from_url(&url);
+
+    let server = app.into_server();
+
+    let rendered_html = server.render_to_string(&url_infos).await;
+
+    println!("{}", rendered_html);
+
+    assert!(rendered_html.contains(greeting));
 }

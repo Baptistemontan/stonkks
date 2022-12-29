@@ -1,4 +1,4 @@
-use crate::app::AppInner;
+use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY};
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -6,6 +6,8 @@ use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
+use wasm_bindgen::{UnwrapThrowExt, JsValue};
+use js_sys::Object;
 
 pub struct Client {
     inner: AppInner,
@@ -65,5 +67,39 @@ impl Client {
             let props = unsafe { page.hydrate(cx, props) };
             self.layout().hydrate(cx, props)
         })
+    }
+
+    fn get_current_url() -> Option<String> {
+        web_sys::window()?
+            .location()
+            .pathname().ok()
+    }
+
+    fn get_window_object() -> Option<Object> {
+        web_sys::window()?
+            .get(NEXT_RS_WINDOW_OBJECT_KEY)
+    }
+
+    fn get_serialized_props() -> Option<String> {
+        let window_object: JsValue = Self::get_window_object()?.into();
+        let props_key = js_sys::JsString::from(SERIALIZED_PROPS_KEY);
+        let props_string = js_sys::Reflect::get(&window_object, &props_key).ok()?;
+        props_string.as_string()
+    }
+
+    fn get_url_and_props() -> Option<(String, String)> {
+        let url = Self::get_current_url()?;
+        let props = Self::get_serialized_props()?;
+        Some((url, props))
+    }
+
+    fn try_run(&self) -> Option<()> {
+        let (url, serialized_props) = Self::get_url_and_props()?;
+        self.hydrate(&url, &serialized_props);
+        Some(())
+    }
+
+    pub fn run(&self) {
+        self.try_run().unwrap_throw();
     }
 }

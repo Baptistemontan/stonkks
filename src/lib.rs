@@ -1,4 +1,5 @@
 mod app;
+// #[cfg(target = "wasm32")]
 mod client;
 mod default;
 mod pages;
@@ -7,6 +8,7 @@ mod server;
 pub mod prelude {
     use super::*;
     pub use app::App;
+    #[cfg(target = "wasm32")]
     pub use client::Client;
     pub use next_rs_traits::predule::*;
     pub use server::Server;

@@ -168,12 +168,15 @@ name = "next_rs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "js-sys",
  "next_rs_macro",
  "next_rs_traits",
  "serde",
  "serde_json",
  "sycamore",
  "tokio",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
