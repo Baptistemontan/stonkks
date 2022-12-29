@@ -125,7 +125,8 @@ fn test_routing() {
     let props: &str = "Greetings!";
 
     let dyn_ssr_view = render_to_string(|cx| unsafe {
-        dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())))
+        let result = dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())));
+        result.body
     });
     let ssr_view =
         render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));

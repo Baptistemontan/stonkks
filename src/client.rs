@@ -1,9 +1,9 @@
-use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY};
+use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY, default_html_view};
 
 use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::{DynBasePage, DynComponent};
+use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
 use wasm_bindgen::{UnwrapThrowExt, JsValue};
@@ -64,8 +64,9 @@ impl Client {
             .expect("Error appened deserializing the props");
 
         sycamore::hydrate(|cx| {
-            let props = unsafe { page.hydrate(cx, props) };
-            self.layout().hydrate(cx, props)
+            let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
+            let body = self.layout().hydrate(cx, body);
+            default_html_view(cx, body, head, &serialized_props)
         })
     }
 

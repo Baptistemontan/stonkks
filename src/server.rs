@@ -3,9 +3,8 @@ use crate::app::{AppInner, default_html_view};
 use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::DynComponent;
+use next_rs_traits::pages::{DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
-use sycamore::prelude::*;
 
 pub struct Server {
     inner: AppInner,
@@ -44,9 +43,8 @@ impl Server {
         let (page, props) = self.find_page_and_props(url_infos).await;
         let serialized_props = unsafe { page.serialize_props(&props).unwrap() };
         let html = sycamore::render_to_string(|cx| {
-            let app = unsafe { page.render_server(cx, props) };
-            let body = self.layout().render_server(cx, app);
-            let head = view!{ cx,  };
+            let DynRenderResult { body, head } = unsafe { page.render_server(cx, props) };
+            let body = self.layout().render_server(cx, body);
             default_html_view(cx, body, head, &serialized_props)
         });
         html

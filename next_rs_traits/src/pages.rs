@@ -20,6 +20,11 @@ pub trait Component {
     fn deserialize_props(serialized_props: &str) -> Result<Self::Props, Error> {
         serde_json::from_str(serialized_props)
     }
+
+    fn render_head<'a, G:Html>(cx: Scope<'a>, props: &ComponentReactiveProps<'a, Self>) -> View<G> {
+        let _props = props;
+        view! { cx, }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,32 +69,43 @@ pub trait Page: Component {
     }
 }
 
+pub struct DynRenderResult<G: Html> {
+    pub body: View<G>,
+    pub head: View<G>
+}
+
 pub trait DynComponent {
-    unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> View<DomNode>;
-    unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> View<SsrNode>;
-    unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> View<HydrateNode>;
+    unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<DomNode>;
+    unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<SsrNode>;
+    unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<HydrateNode>;
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error>;
     fn deserialize_props(&self, serialized_props: &str) -> Result<PropsUntypedPtr, Error>;
 }
 
 impl<T: Component> DynComponent for T {
-    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
+    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<DomNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
-        <T as Component>::render(cx, reactive_props)
+        let head = <T as Component>::render_head(cx, &reactive_props);
+        let body = <T as Component>::render(cx, reactive_props);
+        DynRenderResult { body, head }
     }
 
-    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
+    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<SsrNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
-        <T as Component>::render(cx, reactive_props)
+        let head = <T as Component>::render_head(cx, &reactive_props);
+        let body = <T as Component>::render(cx, reactive_props);
+        DynRenderResult { body, head }
     }
 
-    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
+    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<HydrateNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
-        <T as Component>::render(cx, reactive_props)
+        let head = <T as Component>::render_head(cx, &reactive_props);
+        let body = <T as Component>::render(cx, reactive_props);
+        DynRenderResult { body, head }
     }
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error> {
