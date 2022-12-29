@@ -2,8 +2,10 @@ use super::prelude::*;
 use next_rs_traits::pages::{DynBasePage, DynPageDyn};
 use next_rs_traits::pointers::*;
 
+type BoxedDynPage = Box<dyn DynPageDyn>;
+
 #[derive(Default)]
-pub struct DynPages(Vec<Box<dyn DynPageDyn>>);
+pub struct DynPages(Vec<BoxedDynPage>);
 
 impl DynPages {
     pub fn find_dyn_page_and_route<'url>(
@@ -27,7 +29,18 @@ impl DynPages {
     }
 
     pub fn add_dyn_page<T: DynPage + 'static>(&mut self, page: T) {
-        self.0.push(Box::new(page));
+        self.add_boxed_dyn_page(Box::new(page));
+    }
+
+    pub fn add_boxed_dyn_page(&mut self, page: BoxedDynPage) {
+        self.0.push(page);
+    }
+
+    pub fn add_boxed_dyn_pages<I>(&mut self, pages: I)
+    where
+        I: IntoIterator<Item = BoxedDynPage>,
+    {
+        self.0.extend(pages)
     }
 
     pub fn iter_as_base_page(&self) -> impl IntoIterator<Item = &'_ dyn DynBasePage> {

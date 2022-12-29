@@ -100,11 +100,13 @@ async fn test_dyn_page() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
-    let pages = App::new().dyn_page(MyDynPage);
+    let app = App::new().dyn_page(MyDynPage);
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
+    let server = app.into_server();
+
+    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
 
     assert!(rendered_html.contains(greeting));
 }
@@ -137,11 +139,13 @@ async fn test_layout() {
     let greeting = "test_greeting";
     let url = format!("index/{}", greeting);
 
-    let pages = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
+    let app = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
+
+    let server = app.into_server();
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -153,11 +157,12 @@ async fn test_layout() {
 
 #[tokio::test]
 async fn test_default_not_found() {
-    let pages = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
+    let app = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
+    let server = app.into_server();
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
@@ -166,14 +171,16 @@ async fn test_default_not_found() {
 
 #[tokio::test]
 async fn test_custom_not_found() {
-    let pages = App::new()
+    let app = App::new()
         .dyn_page(MyDynPage)
         .with_layout(MyLayout)
         .not_found(MyNotFound);
 
+    let server = app.into_server();
+
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let (rendered_html, _props) = pages.render_to_string(&url_infos).await;
+    let (rendered_html, _props) = server.render_to_string(&url_infos).await;
 
     println!("{}", rendered_html);
 
