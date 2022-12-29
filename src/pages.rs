@@ -60,7 +60,7 @@ impl Pages {
         }
         (
             &*self.not_found_page,
-            PropsUntypedPtr::new_not_found_props(NotFoundPageProps),
+            NotFoundPageProps::new_untyped()
         )
     }
 

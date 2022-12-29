@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-// use sycamore::{reactive::Scope, view::View};
 use sycamore::prelude::*;
 
 use super::pointers::*;
@@ -25,6 +24,17 @@ pub trait Component {
 
 #[derive(Serialize, Deserialize)]
 pub struct NotFoundPageProps;
+
+impl NotFoundPageProps {
+    pub fn new_untyped() -> PropsUntypedPtr {
+        let props = Self::new();
+        PropsUntypedPtr::new_not_found_props(props)
+    }
+
+    pub fn new() -> Self {
+        NotFoundPageProps
+    }
+}
 
 pub struct NotFountPageReactiveProps;
 
@@ -65,26 +75,26 @@ pub trait DynComponent {
 
 impl<T: Component> DynComponent for T {
     unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<DomNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
-        <T as Component>::render(cx, props)
+        let props = props_ptr.cast::<T>();
+        let reactive_props = props.into_reactive_props(cx);
+        <T as Component>::render(cx, reactive_props)
     }
 
     unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<SsrNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
-        <T as Component>::render(cx, props)
+        let props = props_ptr.cast::<T>();
+        let reactive_props = props.into_reactive_props(cx);
+        <T as Component>::render(cx, reactive_props)
     }
 
     unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> View<HydrateNode> {
-        let props_casted_ptr: PropsCastedPtr<T> = props_ptr.into();
-        let props = props_casted_ptr.into_inner().into_reactive_props(cx);
-        <T as Component>::render(cx, props)
+        let props = props_ptr.cast::<T>();
+        let reactive_props = props.into_reactive_props(cx);
+        <T as Component>::render(cx, reactive_props)
     }
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error> {
-        let shared_props = props.to_shared::<T>();
-        T::serialize_props(&shared_props)
+        let shared_props = props.shared_cast::<T>();
+        T::serialize_props(shared_props)
     }
 
     fn deserialize_props(&self, serialized_props: &str) -> Result<PropsUntypedPtr, Error> {
@@ -122,7 +132,7 @@ pub trait DynPageDyn: DynBasePage {
     async unsafe fn get_server_props<'url>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-    ) -> PropsUntypedPtr; // IndexRoute -> IndexPageProps
+    ) -> PropsUntypedPtr;
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
 
@@ -132,9 +142,8 @@ impl<T: DynPage> DynPageDyn for T {
         &self,
         route_ptr: RouteUntypedPtr<'url>,
     ) -> PropsUntypedPtr {
-        let route_casted_ptr: RouteCastedPtr<T> = route_ptr.into();
-        let route = route_casted_ptr.into_inner();
-        let props = <T as DynPage>::get_server_props(route).await;
+        let route = route_ptr.cast::<T>();
+        let props = <T as DynPage>::get_server_props(*route).await;
         PropsUntypedPtr::new::<T>(props)
     }
 
