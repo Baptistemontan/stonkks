@@ -40,12 +40,12 @@ impl Client {
         })
     }
 
-    pub fn find_page<'url>(&self, url_infos: &UrlInfos<'url>) -> &'_ dyn DynComponent {
+    fn find_page<'url>(&self, url_infos: &UrlInfos<'url>) -> &'_ dyn DynComponent {
         let dyn_pages = self.dyn_pages().iter_as_base_page();
         Self::find_any_page(dyn_pages, url_infos).unwrap_or(self.not_found_page())
     }
 
-    pub fn find_page_and_props<'url>(
+    fn find_page_and_props<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
         serialized_props: &str,
