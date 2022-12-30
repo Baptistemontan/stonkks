@@ -106,7 +106,7 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
-    let rendered_html = server.render_to_string(&url_infos).await;
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
 
     assert!(rendered_html.contains(greeting));
 }
@@ -147,7 +147,7 @@ async fn test_layout() {
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let rendered_html = server.render_to_string(&url_infos).await;
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
 
     println!("{}", rendered_html);
 
@@ -164,7 +164,9 @@ async fn test_default_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let rendered_html = server.render_to_string(&url_infos).await;
+    assert!(server.try_render_to_string(&url_infos).await.is_none());
+
+    let rendered_html = server.render_not_found();
 
     println!("{}", rendered_html);
 
@@ -182,7 +184,9 @@ async fn test_custom_not_found() {
 
     let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
 
-    let rendered_html = server.render_to_string(&url_infos).await;
+    assert!(server.try_render_to_string(&url_infos).await.is_none());
+
+    let rendered_html = server.render_not_found();
 
     println!("{}", rendered_html);
 
@@ -200,7 +204,7 @@ async fn test_dyn_page_total_render() {
 
     let server = app.into_server();
 
-    let rendered_html = server.render_to_string(&url_infos).await;
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
 
     println!("{}", rendered_html);
 
