@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use sycamore::prelude::*;
 
+use crate::routes::DynRoutable;
+
 use super::pointers::*;
 use super::predule::*;
 
@@ -131,19 +133,11 @@ impl<T: Component> DynComponent for T {
     }
 }
 
-pub trait DynBasePage: DynComponent {
-    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>>;
-
+pub trait DynBasePage: DynComponent + DynRoutable {
     fn as_dyn_component(&self) -> &dyn DynComponent;
 }
 
 impl<T: Page> DynBasePage for T {
-    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>> {
-        let route = <T as Routable>::try_match_route(url_infos)?;
-        let route_ptr = RouteUntypedPtr::new::<T>(route);
-        Some(route_ptr)
-    }
-
     fn as_dyn_component(&self) -> &dyn DynComponent {
         self
     }

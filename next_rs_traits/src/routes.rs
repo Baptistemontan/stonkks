@@ -1,5 +1,7 @@
 use std::{collections::HashMap, ops::Deref};
 
+use super::pointers::*;
+
 pub trait Route<'a>: Sized + Send + 'a {
     fn try_from_url(url: &UrlInfos<'a>) -> Option<Self>;
 }
@@ -110,5 +112,17 @@ pub trait Routable {
 
     fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
         Self::Route::try_from_url(url_infos)
+    }
+}
+
+pub trait DynRoutable {
+    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>>;
+}
+
+impl<T: Routable> DynRoutable for T {
+    fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>> {
+        let route = <T as Routable>::try_match_route(url_infos)?;
+        let route_ptr = RouteUntypedPtr::new::<T>(route);
+        Some(route_ptr)
     }
 }

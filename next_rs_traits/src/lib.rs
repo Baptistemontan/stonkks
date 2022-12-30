@@ -3,6 +3,7 @@ pub mod pages;
 pub mod pointers;
 pub mod props;
 pub mod routes;
+pub mod api;
 
 pub mod predule {
     use super::*;

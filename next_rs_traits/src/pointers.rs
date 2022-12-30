@@ -1,6 +1,5 @@
-use crate::pages::NotFoundPageProps;
-
-use super::pages::{Component, Page};
+use super::pages::{Component, NotFoundPageProps};
+use super::routes::Routable;
 
 use std::any::Any;
 
@@ -12,12 +11,12 @@ impl<'a, T: Send + 'a> LifetimedAny<'a> for T {}
 pub struct RouteUntypedPtr<'a>(Box<dyn LifetimedAny<'a>>);
 
 impl<'a> RouteUntypedPtr<'a> {
-    pub fn new<T: Page>(route: T::Route<'a>) -> Self {
+    pub fn new<T: Routable>(route: T::Route<'a>) -> Self {
         let boxed_route = Box::new(route);
         RouteUntypedPtr(boxed_route)
     }
 
-    pub unsafe fn cast<T: Page>(self) -> Box<T::Route<'a>> {
+    pub unsafe fn cast<T: Routable>(self) -> Box<T::Route<'a>> {
         let ptr = self.into_raw() as *mut T::Route<'a>;
         Box::from_raw(ptr)
     }
