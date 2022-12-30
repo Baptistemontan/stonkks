@@ -1,13 +1,15 @@
-use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY, default_html_view, ROOT_ELEMENT_ID};
+use crate::app::{
+    default_html_view, AppInner, NEXT_RS_WINDOW_OBJECT_KEY, ROOT_ELEMENT_ID, SERIALIZED_PROPS_KEY,
+};
 
 use super::pages::DynPages;
 use super::prelude::*;
+use js_sys::Object;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
-use wasm_bindgen::{UnwrapThrowExt, JsValue};
-use js_sys::Object;
+use wasm_bindgen::{JsValue, UnwrapThrowExt};
 
 pub struct Client {
     inner: AppInner,
@@ -64,29 +66,29 @@ impl Client {
             .expect("Error appened deserializing the props");
 
         let root = web_sys::window()
-                .unwrap()
-                .document()
-                .unwrap()
-                .query_selector(&format!("#{}", ROOT_ELEMENT_ID))
-                .unwrap()
-                .unwrap();
+            .unwrap()
+            .document()
+            .unwrap()
+            .query_selector(&format!("#{}", ROOT_ELEMENT_ID))
+            .unwrap()
+            .unwrap();
 
-        sycamore::hydrate_to(|cx| {
-            let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
-            let body = self.layout().hydrate(cx, body);
-            default_html_view(cx, body, head, &serialized_props)
-        }, &root)
+        sycamore::hydrate_to(
+            |cx| {
+                let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
+                let body = self.layout().hydrate(cx, body);
+                default_html_view(cx, body, head, &serialized_props)
+            },
+            &root,
+        )
     }
 
     fn get_current_url() -> Option<String> {
-        web_sys::window()?
-            .location()
-            .pathname().ok()
+        web_sys::window()?.location().pathname().ok()
     }
 
     fn get_window_object() -> Option<Object> {
-        web_sys::window()?
-            .get(NEXT_RS_WINDOW_OBJECT_KEY)
+        web_sys::window()?.get(NEXT_RS_WINDOW_OBJECT_KEY)
     }
 
     fn get_serialized_props() -> Option<String> {

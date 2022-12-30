@@ -85,8 +85,11 @@ impl AppInner {
     }
 }
 
-fn window_object_script(props: &str) -> String { 
-   format!("window.{0}=window.{0}||{{}};window.{0}.{1}=\'{2}\';", NEXT_RS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props)
+fn window_object_script(props: &str) -> String {
+    format!(
+        "window.{0}=window.{0}||{{}};window.{0}.{1}=\'{2}\';",
+        NEXT_RS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props
+    )
 }
 
 fn default_head<G: Html>(cx: Scope, head: View<G>, props: &str) -> View<G> {

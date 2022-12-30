@@ -21,7 +21,10 @@ pub trait Component: Send + Sync {
         serde_json::from_str(serialized_props)
     }
 
-    fn render_head<'a, G:Html>(cx: Scope<'a>, props: &ComponentReactiveProps<'a, Self>) -> View<G> {
+    fn render_head<'a, G: Html>(
+        cx: Scope<'a>,
+        props: &ComponentReactiveProps<'a, Self>,
+    ) -> View<G> {
         let _props = props;
         view! { cx, }
     }
@@ -71,7 +74,7 @@ pub trait Page: Component {
 
 pub struct DynRenderResult<G: Html> {
     pub body: View<G>,
-    pub head: View<G>
+    pub head: View<G>,
 }
 
 pub trait DynComponent: Send + Sync {
@@ -84,7 +87,11 @@ pub trait DynComponent: Send + Sync {
 }
 
 impl<T: Component> DynComponent for T {
-    unsafe fn render_client(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<DomNode> {
+    unsafe fn render_client(
+        &self,
+        cx: Scope,
+        props_ptr: PropsUntypedPtr,
+    ) -> DynRenderResult<DomNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
         let head = <T as Component>::render_head(cx, &reactive_props);
@@ -92,7 +99,11 @@ impl<T: Component> DynComponent for T {
         DynRenderResult { body, head }
     }
 
-    unsafe fn render_server(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<SsrNode> {
+    unsafe fn render_server(
+        &self,
+        cx: Scope,
+        props_ptr: PropsUntypedPtr,
+    ) -> DynRenderResult<SsrNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
         let head = <T as Component>::render_head(cx, &reactive_props);
@@ -100,7 +111,11 @@ impl<T: Component> DynComponent for T {
         DynRenderResult { body, head }
     }
 
-    unsafe fn hydrate(&self, cx: Scope, props_ptr: PropsUntypedPtr) -> DynRenderResult<HydrateNode> {
+    unsafe fn hydrate(
+        &self,
+        cx: Scope,
+        props_ptr: PropsUntypedPtr,
+    ) -> DynRenderResult<HydrateNode> {
         let props = props_ptr.cast::<T>();
         let reactive_props = props.into_reactive_props(cx);
         let head = <T as Component>::render_head(cx, &reactive_props);

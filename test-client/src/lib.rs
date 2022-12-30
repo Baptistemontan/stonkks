@@ -1,17 +1,16 @@
 use next_rs::prelude::*;
+use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
-use serde::{Serialize, Deserialize};
-
 
 struct CounterPage;
 
 #[derive(Serialize, Deserialize)]
 struct CounterProps {
-    count: i32
+    count: i32,
 }
 
 struct CounterReactiveProps<'a> {
-    count: &'a Signal<i32>
+    count: &'a Signal<i32>,
 }
 
 impl Props for CounterProps {}
@@ -25,9 +24,7 @@ impl IntoProps for CounterProps {
 
     fn into_reactive_props<'a>(self, cx: Scope<'a>) -> Self::ReactiveProps<'a> {
         let count = create_signal(cx, self.count);
-        CounterReactiveProps {
-            count
-        }
+        CounterReactiveProps { count }
     }
 }
 
@@ -49,9 +46,12 @@ impl Component for CounterPage {
         }
     }
 
-    fn render_head<'a, G:Html>(cx: Scope<'a>, props: &ComponentReactiveProps<'a, Self>) -> View<G> {
+    fn render_head<'a, G: Html>(
+        cx: Scope<'a>,
+        props: &ComponentReactiveProps<'a, Self>,
+    ) -> View<G> {
         let count = props.count;
-        view! { cx, 
+        view! { cx,
             title {
                 "counter: " (*count.get())
             }
@@ -70,7 +70,7 @@ impl<'a> Route<'a> for CounterRoute {
         match (segments.next(), segments.next()) {
             (Some(second), None) => Some(CounterRoute(second.parse().ok()?)),
             (None, None) => Some(CounterRoute(0)),
-            _ => None
+            _ => None,
         }
     }
 }
