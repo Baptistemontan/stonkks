@@ -90,15 +90,19 @@ impl Server {
     }
 
     pub async fn respond<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<Response> {
-        if url_infos.segments().first() == Some(&"api") {
-            self.api
-                .find_and_respond(url_infos)
-                .await
-                .map(Response::Api)
-        } else {
-            self.try_render_to_string(url_infos)
-                .await
-                .map(Response::Html)
+        match url_infos.segments().first() {
+            Some(&"public") => None, // static file
+            Some(&"api") => { // api route
+                self.api
+                    .find_and_respond(url_infos)
+                    .await
+                    .map(Response::Api)
+            },
+            _ => { // possible page
+                self.try_render_to_string(url_infos)
+                    .await
+                    .map(Response::Html)
+            } 
         }
     }
 }
