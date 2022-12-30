@@ -9,7 +9,7 @@ use serde_json::Error;
 
 pub type ComponentReactiveProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
-pub trait Component {
+pub trait Component: Send + Sync {
     type Props: Props;
 
     fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentReactiveProps<'a, Self>) -> View<G>;
@@ -74,7 +74,7 @@ pub struct DynRenderResult<G: Html> {
     pub head: View<G>
 }
 
-pub trait DynComponent {
+pub trait DynComponent: Send + Sync {
     unsafe fn render_client(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<DomNode>;
     unsafe fn render_server(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<SsrNode>;
     unsafe fn hydrate(&self, cx: Scope, props: PropsUntypedPtr) -> DynRenderResult<HydrateNode>;

@@ -1,0 +1,15 @@
+[package]
+name = "test-client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+next_rs = { path = "../../next_rs" }
+sycamore = "0.8.2"
+serde = { version = "1.0.152", features = ["derive"] }
+async-trait = "0.1.60"
+console_error_panic_hook = "0.1.7"
+console_log = "0.2.0"
+log = "0.4.17"

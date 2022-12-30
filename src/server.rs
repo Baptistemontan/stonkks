@@ -1,4 +1,4 @@
-use crate::app::{AppInner, default_html_view};
+use crate::app::{AppInner, default_html_view, ROOT_ELEMENT_ID};
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -47,7 +47,7 @@ impl Server {
             let body = self.layout().render_server(cx, body);
             default_html_view(cx, body, head, &serialized_props)
         });
-        html
+        format!("<!DOCTYPE html><html id=\"{}\">{}</html>", ROOT_ELEMENT_ID, html)
     }
 
     

@@ -9,6 +9,9 @@ use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";
 pub const NEXT_RS_WINDOW_OBJECT_KEY: &str = "__NEXT_RS__";
+pub const CLIENT_WASM_FILE_PATH: &str = "/public/next_rs_wasm_app.wasm";
+pub const CLIENT_JS_FILE_PATH: &str = "/public/next_rs_js_app.js";
+pub const ROOT_ELEMENT_ID: &str = "__NEXT_RS_ROOT__";
 
 #[derive(Default)]
 pub struct App {
@@ -83,7 +86,7 @@ impl AppInner {
 }
 
 fn window_object_script(props: &str) -> String { 
-   format!("window.{0}=window.{0}||{{}};window.{0}.{1}=\'{2}\'", NEXT_RS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props)
+   format!("window.{0}=window.{0}||{{}};window.{0}.{1}=\'{2}\';", NEXT_RS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props)
 }
 
 fn default_head<G: Html>(cx: Scope, head: View<G>, props: &str) -> View<G> {
@@ -93,6 +96,8 @@ fn default_head<G: Html>(cx: Scope, head: View<G>, props: &str) -> View<G> {
             meta(charset = "UTF-8")
             meta(http-equiv="X-UA-Compatible", content="IE=edge")
             meta(name="viewport", content="width=device-width, initial-scale=1.0")
+            link(rel="preload", href=CLIENT_WASM_FILE_PATH, as="fetch", type="application/wasm", crossorigin="")
+            link(rel="modulepreload", href=CLIENT_JS_FILE_PATH)
             script {
                 (script)
             }
@@ -106,6 +111,9 @@ pub fn default_html_view<G: Html>(cx: Scope, body: View<G>, head: View<G>, props
     view! { cx,
         (head)
         body {
+            script(type="module") {
+                "import init from '"(CLIENT_JS_FILE_PATH)"';init('"(CLIENT_WASM_FILE_PATH)"');"
+            }
             (body)
         }
     }

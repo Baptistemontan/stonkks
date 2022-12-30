@@ -49,7 +49,15 @@ impl<'a> Params<'a> {
 }
 
 fn parse_segments<'a>(path: &'a str) -> Segments {
-    path.split('/').filter(|s| !s.is_empty()).collect()
+    path.split('/').filter(|s| !s.is_empty()).map(|s| {
+        let html = ".html";
+        if s.ends_with(html) {
+            let index = s.len() - html.len();
+            &s[..index]
+        } else {
+            s
+        }
+    }).collect()
 }
 
 fn parse_url<'a>(url: &'a str) -> (Segments<'a>, Option<Params<'a>>) {
@@ -83,9 +91,7 @@ impl<'a> UrlInfos<'a> {
     pub fn url(&self) -> &'a str {
         self.url
     }
-}
 
-impl<'a> UrlInfos<'a> {
     pub fn parse_from_url(url: &'a str) -> Self {
         let (segments, params) = parse_url(url);
         UrlInfos {

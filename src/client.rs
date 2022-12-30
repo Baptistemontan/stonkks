@@ -1,4 +1,4 @@
-use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY, default_html_view};
+use crate::app::{AppInner, SERIALIZED_PROPS_KEY, NEXT_RS_WINDOW_OBJECT_KEY, default_html_view, ROOT_ELEMENT_ID};
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -63,11 +63,19 @@ impl Client {
             .find_page_and_props(&url_infos, serialized_props)
             .expect("Error appened deserializing the props");
 
-        sycamore::hydrate(|cx| {
+        let root = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .query_selector(&format!("#{}", ROOT_ELEMENT_ID))
+                .unwrap()
+                .unwrap();
+
+        sycamore::hydrate_to(|cx| {
             let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
             let body = self.layout().hydrate(cx, body);
             default_html_view(cx, body, head, &serialized_props)
-        })
+        }, &root)
     }
 
     fn get_current_url() -> Option<String> {
