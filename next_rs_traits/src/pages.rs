@@ -22,11 +22,7 @@ pub trait Component: Send + Sync + 'static {
     fn deserialize_props(serialized_props: &str) -> Result<Self::Props, Error> {
         serde_json::from_str(serialized_props)
     }
-
-    fn render_head<'a, G: Html>(
-        cx: Scope<'a>,
-        props: &ComponentReactiveProps<'a, Self>,
-    ) -> View<G> {
+    fn render_head<'a, G: Html>(cx: Scope<'a>, props: &Self::Props) -> View<G> {
         let _props = props;
         view! { cx, }
     }
@@ -91,8 +87,8 @@ impl<T: Component> DynComponent for T {
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<DomNode> {
         let props = props_ptr.cast::<T>();
+        let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
-        let head = <T as Component>::render_head(cx, &reactive_props);
         let body = <T as Component>::render(cx, reactive_props);
         DynRenderResult { body, head }
     }
@@ -103,8 +99,8 @@ impl<T: Component> DynComponent for T {
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<SsrNode> {
         let props = props_ptr.cast::<T>();
+        let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
-        let head = <T as Component>::render_head(cx, &reactive_props);
         let body = <T as Component>::render(cx, reactive_props);
         DynRenderResult { body, head }
     }
@@ -115,8 +111,8 @@ impl<T: Component> DynComponent for T {
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<HydrateNode> {
         let props = props_ptr.cast::<T>();
+        let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
-        let head = <T as Component>::render_head(cx, &reactive_props);
         let body = <T as Component>::render(cx, reactive_props);
         DynRenderResult { body, head }
     }

@@ -46,14 +46,11 @@ impl Component for Counter {
         }
     }
 
-    fn render_head<'a, G: Html>(
-        cx: Scope<'a>,
-        props: &ComponentReactiveProps<'a, Self>,
-    ) -> View<G> {
+    fn render_head<'a, G: Html>(cx: Scope<'a>, props: &Self::Props) -> View<G> {
         let count = props.count;
         view! { cx,
             title {
-                "counter: " (*count.get())
+                "counter: " (count)
             }
         }
     }
