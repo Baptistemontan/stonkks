@@ -1,4 +1,5 @@
 use crate::app::{default_html_view, AppInner, ROOT_ELEMENT_ID};
+use crate::pages::StaticPages;
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -21,6 +22,10 @@ impl Server {
         self.inner.dyn_pages()
     }
 
+    fn static_pages(&self) -> &StaticPages {
+        self.inner.static_pages()
+    } 
+
     fn not_found_page(&self) -> &dyn DynComponent {
         self.inner.not_found_page()
     }
@@ -33,6 +38,9 @@ impl Server {
         &self,
         url_infos: &UrlInfos<'url>,
     ) -> (&'_ dyn DynComponent, PropsUntypedPtr) {
+        if let Some(page) = self.static_pages().find_static_page(url_infos) {
+            return (page.as_dyn_component(), PropsUntypedPtr::new_unit());
+        }
         if let Some((page, props)) = self.dyn_pages().find_dyn_page_and_props(url_infos).await {
             return (page.as_dyn_component(), props);
         }

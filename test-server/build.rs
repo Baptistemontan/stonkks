@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 
 fn main() {
+    println!("cargo:rerun-if-changed=../test-client/dist/test-client_bg.wasm");
     let wasm_file_origin_path = Path::new("../test-client/dist/test-client_bg.wasm");
     let wasm_file_dest_path = Path::new("./static/next_rs_wasm_app.wasm");
 

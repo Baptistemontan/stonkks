@@ -182,3 +182,17 @@ impl<T: DynPage> DynPageDyn for T {
         self
     }
 }
+
+pub trait StaticPage: Page<Props = ()> { }
+
+pub trait DynStaticPage: DynBasePage {
+    fn as_dyn_base_page(&self) -> &dyn DynBasePage;
+}
+
+impl<T: Page<Props = ()>> StaticPage for T { }
+
+impl<T: StaticPage> DynStaticPage for T {
+    fn as_dyn_base_page(&self) -> &dyn DynBasePage {
+        self
+    }
+}

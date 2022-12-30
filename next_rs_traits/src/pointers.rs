@@ -34,6 +34,11 @@ impl PropsUntypedPtr {
         PropsUntypedPtr(boxed_props)
     }
 
+    pub fn new_unit() -> Self {
+        let boxed_props = Box::new(());
+        PropsUntypedPtr(boxed_props)
+    }
+
     pub fn new_not_found_props(props: NotFoundPageProps) -> Self {
         let boxed_props = Box::new(props);
         Self(boxed_props)

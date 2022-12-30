@@ -4,12 +4,17 @@ use crate::app::{
 
 use super::pages::DynPages;
 use super::prelude::*;
-use js_sys::Object;
+use js_sys::{Object, JsString};
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
+
+fn log(msg: &str) {
+    let s = JsString::from(msg);
+    web_sys::console::log_1(&s);
+}
 
 pub struct Client {
     inner: AppInner,
@@ -106,7 +111,13 @@ impl Client {
 
     fn try_run(&self) -> Option<()> {
         let (url, serialized_props) = Self::get_url_and_props()?;
+        log("path: ");
+        log(&url);
+        log("props: ");
+        log(&serialized_props);
+        log("start hydrate.");
         self.hydrate(&url, &serialized_props);
+        log("hydrate finished.");
         Some(())
     }
 

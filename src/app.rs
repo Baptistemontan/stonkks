@@ -1,10 +1,11 @@
 use crate::client::Client;
+use crate::pages::StaticPages;
 
 use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::{DynComponent, DynPageDyn};
+use next_rs_traits::pages::{DynComponent, DynPageDyn, StaticPage, DynStaticPage};
 use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";
@@ -16,6 +17,7 @@ pub const ROOT_ELEMENT_ID: &str = "__NEXT_RS_ROOT__";
 #[derive(Default)]
 pub struct App {
     dyn_pages: DynPages,
+    static_pages: StaticPages,
     layout: AppLayout,
     not_found_page: NotFound,
 }
@@ -26,7 +28,12 @@ impl App {
     }
 
     pub fn dyn_page<T: DynPage + 'static>(mut self, page: T) -> Self {
-        self.dyn_pages.add_dyn_page(page);
+        self.dyn_pages.add_page(page);
+        self
+    }
+
+    pub fn static_page<T: StaticPage + 'static>(mut self, page: T) -> Self {
+        self.static_pages.add_page(page);
         self
     }
 
@@ -34,7 +41,15 @@ impl App {
     where
         I: IntoIterator<Item = Box<dyn DynPageDyn>>,
     {
-        self.dyn_pages.add_boxed_dyn_pages(pages);
+        self.dyn_pages.add_boxed_pages(pages);
+        self
+    }
+
+    pub fn static_pages<I>(mut self, pages: I) -> Self
+    where
+        I: IntoIterator<Item = Box<dyn DynStaticPage>>,
+    {
+        self.static_pages.add_boxed_pages(pages);
         self
     }
 
@@ -51,6 +66,7 @@ impl App {
     fn into_inner(self) -> AppInner {
         AppInner {
             dyn_pages: self.dyn_pages,
+            static_pages: self.static_pages,
             layout: self.layout,
             not_found_page: self.not_found_page,
         }
@@ -67,6 +83,7 @@ impl App {
 
 pub struct AppInner {
     dyn_pages: DynPages,
+    static_pages: StaticPages,
     layout: AppLayout,
     not_found_page: NotFound,
 }
@@ -74,6 +91,10 @@ pub struct AppInner {
 impl AppInner {
     pub fn dyn_pages(&self) -> &DynPages {
         &self.dyn_pages
+    }
+
+    pub fn static_pages(&self) -> &StaticPages {
+        &self.static_pages
     }
 
     pub fn layout(&self) -> &dyn DynLayout {

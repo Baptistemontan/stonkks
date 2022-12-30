@@ -17,3 +17,19 @@ pub trait IntoProps {
 
     fn into_reactive_props<'a>(self, cx: Scope<'a>) -> Self::ReactiveProps<'a>;
 }
+
+impl Props for () {
+
+}
+
+impl IntoProps for () {
+    type ReactiveProps<'a> = ();
+
+    fn into_reactive_props<'a>(self, _cx: Scope<'a>) -> Self::ReactiveProps<'a> {
+        ()
+    }
+}
+
+impl<'a> ReactiveProps<'a> for () {
+    type Props = ();
+}
