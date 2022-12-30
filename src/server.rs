@@ -24,7 +24,7 @@ impl Server {
 
     fn static_pages(&self) -> &StaticPages {
         self.inner.static_pages()
-    } 
+    }
 
     fn not_found_page(&self) -> &dyn DynComponent {
         self.inner.not_found_page()
@@ -34,7 +34,10 @@ impl Server {
         self.inner.layout()
     }
 
-    pub async fn try_find_page_and_props<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<(&'_ dyn DynComponent, PropsUntypedPtr)> {
+    pub async fn try_find_page_and_props<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<(&'_ dyn DynComponent, PropsUntypedPtr)> {
         if let Some(page) = self.static_pages().find_static_page(url_infos) {
             return Some((page.as_dyn_component(), PropsUntypedPtr::new_unit()));
         }
@@ -48,7 +51,8 @@ impl Server {
         &self,
         url_infos: &UrlInfos<'url>,
     ) -> (&'_ dyn DynComponent, PropsUntypedPtr) {
-        self.try_find_page_and_props(url_infos).await
+        self.try_find_page_and_props(url_infos)
+            .await
             .unwrap_or_else(|| (self.not_found_page(), NotFoundPageProps::new_untyped()))
     }
 

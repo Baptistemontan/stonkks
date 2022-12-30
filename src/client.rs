@@ -5,7 +5,7 @@ use crate::pages::StaticPages;
 
 use super::pages::DynPages;
 use super::prelude::*;
-use js_sys::{Object, JsString};
+use js_sys::{JsString, Object};
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
@@ -34,7 +34,7 @@ impl Client {
 
     fn static_pages(&self) -> &StaticPages {
         self.inner.static_pages()
-    } 
+    }
 
     fn not_found_page(&self) -> &dyn DynComponent {
         self.inner.not_found_page()

@@ -5,7 +5,7 @@ use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::{DynComponent, DynPageDyn, StaticPage, DynStaticPage};
+use next_rs_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
 use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";

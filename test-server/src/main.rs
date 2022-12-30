@@ -3,10 +3,12 @@ use std::{ops::Deref, sync::Arc};
 use next_rs::prelude::*;
 use rocket::{
     fs::{relative, FileServer},
-    Route as RocketRoute,
-    get, launch,
-    response::{content::RawHtml, Responder},
-    routes, State, outcome::Outcome, route::Handler, Data, Response, http::{Status, ContentType, Method},
+    http::{ContentType, Method, Status},
+    launch,
+    outcome::Outcome,
+    response::Responder,
+    route::Handler,
+    Data, Response, Route as RocketRoute,
 };
 use test_client::get_app;
 
@@ -35,7 +37,11 @@ struct MyServer(Arc<Server>);
 
 #[async_trait::async_trait]
 impl Handler for MyServer {
-    async fn handle<'r>(&self, request: &'r Request<'_>, data: Data<'r>) -> Outcome<Response<'r>, Status, Data<'r>>{
+    async fn handle<'r>(
+        &self,
+        request: &'r Request<'_>,
+        data: Data<'r>,
+    ) -> Outcome<Response<'r>, Status, Data<'r>> {
         let url = Uri::from_request(request);
         let result = self.0.try_render_to_string(&url).await;
         match result {
@@ -43,10 +49,10 @@ impl Handler for MyServer {
                 let response = (ContentType::HTML, html).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
-                    Err(status) => Outcome::Failure(status)
+                    Err(status) => Outcome::Failure(status),
                 }
-            },
-            None => Outcome::Forward(data)
+            }
+            None => Outcome::Forward(data),
         }
     }
 }
@@ -62,22 +68,30 @@ struct NotFound(Arc<Server>);
 
 #[async_trait::async_trait]
 impl Handler for NotFound {
-    async fn handle<'r>(&self, request: &'r Request<'_>, _data: Data<'r>) -> Outcome<Response<'r>, Status, Data<'r>>{
+    async fn handle<'r>(
+        &self,
+        request: &'r Request<'_>,
+        _data: Data<'r>,
+    ) -> Outcome<Response<'r>, Status, Data<'r>> {
         let html = self.0.render_not_found();
         let response = (Status::NotFound, (ContentType::HTML, html)).respond_to(request);
         match response {
             Ok(rep) => Outcome::Success(rep),
-            Err(status) => Outcome::Failure(status)
+            Err(status) => Outcome::Failure(status),
         }
     }
 }
 
 impl Into<Vec<RocketRoute>> for NotFound {
     fn into(self) -> Vec<RocketRoute> {
-        vec![RocketRoute::ranked(isize::MAX - 1, Method::Get, "/<_..>", self)]
+        vec![RocketRoute::ranked(
+            isize::MAX - 1,
+            Method::Get,
+            "/<_..>",
+            self,
+        )]
     }
 }
-
 
 #[launch]
 fn rocket() -> _ {
