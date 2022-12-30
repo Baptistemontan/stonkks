@@ -29,7 +29,7 @@ impl DynPages {
         Some((page, props))
     }
 
-    pub fn add_page<T: DynPage + 'static>(&mut self, page: T) {
+    pub fn add_page<T: DynPage>(&mut self, page: T) {
         self.add_boxed_page(Box::new(page));
     }
 
@@ -65,7 +65,7 @@ impl StaticPages {
         None
     }
 
-    pub fn add_page<T: StaticPage + 'static>(&mut self, page: T) {
+    pub fn add_page<T: StaticPage>(&mut self, page: T) {
         self.add_boxed_page(Box::new(page));
     }
 

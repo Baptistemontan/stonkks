@@ -107,7 +107,7 @@ impl<'a> UrlInfos<'a> {
     }
 }
 
-pub trait Routable: Send + Sync {
+pub trait Routable: Send + Sync + 'static {
     type Route<'a>: Route<'a>;
 
     fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
