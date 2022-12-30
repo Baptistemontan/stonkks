@@ -33,7 +33,7 @@ impl StartupError {
             StartupError::NoProps => "No props present in the NextRs object.",
             StartupError::NoPathname => "Unable to get the pathname.",
             StartupError::NoNextRsObject => "No NextRs object.",
-            StartupError::PropsNotUTF8 => "Props are not UTF8 encoded",
+            StartupError::PropsNotUTF8 => "Props are not UTF8 encoded.",
         }
     }
 }
