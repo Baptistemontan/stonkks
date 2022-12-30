@@ -5,6 +5,7 @@ use super::predule::*;
 
 /// For now api routes just respond with a string,
 /// this will change just need to figure out the api.
+/// Also need a way for ressources, got a rough idea how to do it but will se later.s
 #[async_trait::async_trait]
 pub trait Api: Routable {
     async fn respond<'url>(route: Self::Route<'url>) -> String;
