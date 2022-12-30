@@ -104,3 +104,11 @@ impl<'a> UrlInfos<'a> {
         }
     }
 }
+
+pub trait Routable {
+    type Route<'a>: Route<'a>;
+
+    fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
+        Self::Route::try_from_url(url_infos)
+    }
+}

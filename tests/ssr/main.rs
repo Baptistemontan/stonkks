@@ -3,7 +3,7 @@ use next_rs::prelude::*;
 use next_rs_traits::pages::DynBasePage;
 use next_rs_traits::pointers::*;
 use serde::{Deserialize, Serialize};
-use sycamore::{prelude::*, render_to_string};
+use sycamore::prelude::*;
 
 struct MyLayout;
 
@@ -70,7 +70,7 @@ impl Component for MyDynPage {
     }
 }
 
-impl Page for MyDynPage {
+impl Routable for MyDynPage {
     type Route<'a> = MyRoute<'a>;
 }
 
@@ -124,13 +124,13 @@ fn test_routing() {
 
     let props: &str = "Greetings!";
 
-    let dyn_ssr_view = render_to_string(|cx| unsafe {
+    let dyn_ssr_view = sycamore::render_to_string(|cx| unsafe {
         let result =
             dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())));
         result.body
     });
     let ssr_view =
-        render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
+        sycamore::render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));

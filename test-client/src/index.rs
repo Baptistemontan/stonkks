@@ -37,6 +37,6 @@ impl<'a> Route<'a> for IndexRoute {
     }
 }
 
-impl Page for Index {
+impl Routable for Index {
     type Route<'a> = IndexRoute;
 }

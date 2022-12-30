@@ -64,13 +64,9 @@ pub trait NotFoundPage: Component<Props = NotFoundPageProps> + 'static {}
 
 impl<T: Component<Props = NotFoundPageProps> + 'static> NotFoundPage for T {}
 
-pub trait Page: Component {
-    type Route<'a>: Route<'a>;
+pub trait Page: Component + Routable { }
 
-    fn try_match_route<'url>(url_infos: &UrlInfos<'url>) -> Option<Self::Route<'url>> {
-        Self::Route::try_from_url(url_infos)
-    }
-}
+impl<T: Component + Routable> Page for T { }
 
 pub struct DynRenderResult<G: Html> {
     pub body: View<G>,
@@ -143,7 +139,7 @@ pub trait DynBasePage: DynComponent {
 
 impl<T: Page> DynBasePage for T {
     fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>> {
-        let route = <T as Page>::try_match_route(url_infos)?;
+        let route = <T as Routable>::try_match_route(url_infos)?;
         let route_ptr = RouteUntypedPtr::new::<T>(route);
         Some(route_ptr)
     }

@@ -75,7 +75,7 @@ impl<'a> Route<'a> for CounterRoute {
     }
 }
 
-impl Page for Counter {
+impl Routable for Counter {
     type Route<'a> = CounterRoute;
 }
 
