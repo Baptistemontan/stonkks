@@ -1,3 +1,4 @@
+use crate::api::ApiRoutes;
 use crate::app::{default_html_view, AppInner, ROOT_ELEMENT_ID};
 use crate::pages::StaticPages;
 
@@ -9,15 +10,14 @@ use next_rs_traits::pointers::*;
 
 pub struct Server {
     inner: AppInner,
-}
-
-impl From<AppInner> for Server {
-    fn from(inner: AppInner) -> Self {
-        Server { inner }
-    }
+    api: ApiRoutes
 }
 
 impl Server {
+    pub(crate) fn new(inner: AppInner, api: ApiRoutes) -> Self {
+        Server { inner, api }
+    }
+
     fn dyn_pages(&self) -> &DynPages {
         self.inner.dyn_pages()
     }

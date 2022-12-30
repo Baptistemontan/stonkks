@@ -115,7 +115,7 @@ pub trait Routable: Send + Sync + 'static {
     }
 }
 
-pub trait DynRoutable {
+pub trait DynRoutable: Send + Sync + 'static {
     fn try_match_route<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<RouteUntypedPtr<'url>>;
 }
 

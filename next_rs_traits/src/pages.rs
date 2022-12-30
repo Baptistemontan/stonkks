@@ -11,7 +11,7 @@ use serde_json::Error;
 
 pub type ComponentReactiveProps<'a, T> = <<T as Component>::Props as IntoProps>::ReactiveProps<'a>;
 
-pub trait Component: Send + Sync {
+pub trait Component: Send + Sync + 'static {
     type Props: Props;
 
     fn render<'a, G: Html>(cx: Scope<'a>, props: ComponentReactiveProps<'a, Self>) -> View<G>;
@@ -62,9 +62,9 @@ impl IntoProps for NotFoundPageProps {
 
 impl Props for NotFoundPageProps {}
 
-pub trait NotFoundPage: Component<Props = NotFoundPageProps> + 'static {}
+pub trait NotFoundPage: Component<Props = NotFoundPageProps> {}
 
-impl<T: Component<Props = NotFoundPageProps> + 'static> NotFoundPage for T {}
+impl<T: Component<Props = NotFoundPageProps>> NotFoundPage for T {}
 
 pub trait Page: Component + Routable { }
 

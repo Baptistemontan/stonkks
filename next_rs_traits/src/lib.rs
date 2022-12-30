@@ -13,4 +13,5 @@ pub mod predule {
     };
     pub use props::{IntoProps, Props, ReactiveProps};
     pub use routes::{Route, UrlInfos, Routable};
+    pub use api::Api;
 }

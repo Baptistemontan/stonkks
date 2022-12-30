@@ -1,3 +1,4 @@
+use crate::api::ApiRoutes;
 use crate::client::Client;
 use crate::pages::StaticPages;
 
@@ -18,6 +19,7 @@ pub const ROOT_ELEMENT_ID: &str = "__NEXT_RS_ROOT__";
 pub struct App {
     dyn_pages: DynPages,
     static_pages: StaticPages,
+    api: ApiRoutes,
     layout: AppLayout,
     not_found_page: NotFound,
 }
@@ -27,12 +29,12 @@ impl App {
         Self::default()
     }
 
-    pub fn dyn_page<T: DynPage + 'static>(mut self, page: T) -> Self {
+    pub fn dyn_page<T: DynPage>(mut self, page: T) -> Self {
         self.dyn_pages.add_page(page);
         self
     }
 
-    pub fn static_page<T: StaticPage + 'static>(mut self, page: T) -> Self {
+    pub fn static_page<T: StaticPage>(mut self, page: T) -> Self {
         self.static_pages.add_page(page);
         self
     }
@@ -77,7 +79,9 @@ impl App {
     }
 
     pub fn into_server(self) -> Server {
-        self.into_inner().into()
+        let App { dyn_pages, static_pages, api, layout, not_found_page } = self;
+        let inner = AppInner::new(dyn_pages, static_pages, layout, not_found_page);
+        Server::new(inner, api)
     }
 }
 
@@ -89,6 +93,13 @@ pub struct AppInner {
 }
 
 impl AppInner {
+    pub fn new(dyn_pages: DynPages,
+        static_pages: StaticPages,
+        layout: AppLayout,
+        not_found_page: NotFound) -> Self {
+            AppInner { dyn_pages, static_pages, layout, not_found_page }
+        }
+
     pub fn dyn_pages(&self) -> &DynPages {
         &self.dyn_pages
     }

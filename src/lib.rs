@@ -3,6 +3,7 @@ mod client;
 mod default;
 mod pages;
 mod server;
+mod api;
 
 pub mod prelude {
     use super::*;
