@@ -44,7 +44,7 @@ impl DynPages {
         self.0.extend(pages)
     }
 
-    pub fn iter_as_base_page(&self) -> impl IntoIterator<Item = &'_ dyn DynBasePage> {
+    pub fn iter_as_base_page(&self) -> impl Iterator<Item = &'_ dyn DynBasePage> {
         self.0.iter().map(|page| page.as_dyn_base_page())
     }
 }
@@ -80,7 +80,7 @@ impl StaticPages {
         self.0.extend(pages)
     }
 
-    pub fn iter_as_base_page(&self) -> impl IntoIterator<Item = &'_ dyn DynBasePage> {
+    pub fn iter_as_base_page(&self) -> impl Iterator<Item = &'_ dyn DynBasePage> {
         self.0.iter().map(|page| page.as_dyn_base_page())
     }
 }

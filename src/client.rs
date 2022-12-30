@@ -1,6 +1,7 @@
 use crate::app::{
     default_html_view, AppInner, NEXT_RS_WINDOW_OBJECT_KEY, ROOT_ELEMENT_ID, SERIALIZED_PROPS_KEY,
 };
+use crate::pages::StaticPages;
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -31,6 +32,10 @@ impl Client {
         self.inner.dyn_pages()
     }
 
+    fn static_pages(&self) -> &StaticPages {
+        self.inner.static_pages()
+    } 
+
     fn not_found_page(&self) -> &dyn DynComponent {
         self.inner.not_found_page()
     }
@@ -50,8 +55,10 @@ impl Client {
     }
 
     fn find_page<'url>(&self, url_infos: &UrlInfos<'url>) -> &'_ dyn DynComponent {
+        let static_pages = self.static_pages().iter_as_base_page();
         let dyn_pages = self.dyn_pages().iter_as_base_page();
-        Self::find_any_page(dyn_pages, url_infos).unwrap_or(self.not_found_page())
+        let iter_pages = static_pages.chain(dyn_pages);
+        Self::find_any_page(iter_pages, url_infos).unwrap_or(self.not_found_page())
     }
 
     fn find_page_and_props<'url>(
