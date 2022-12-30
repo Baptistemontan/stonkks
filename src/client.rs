@@ -10,12 +10,35 @@ use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
-use wasm_bindgen::{JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_str, JsValue};
+use web_sys::Window;
 
 fn log(msg: &str) {
     let s = JsString::from(msg);
     web_sys::console::log_1(&s);
 }
+
+enum StartupError {
+    NoWindow,
+    NoProps,
+    NoPathname,
+    NoNextRsObject,
+    PropsNotUTF8,
+}
+
+impl StartupError {
+    pub fn error_msg(self) -> &'static str {
+        match self {
+            StartupError::NoWindow => "Unable to aquire the window object.",
+            StartupError::NoProps => "No props present in the NextRs object.",
+            StartupError::NoPathname => "Unable to get the pathname.",
+            StartupError::NoNextRsObject => "No NextRs object.",
+            StartupError::PropsNotUTF8 => "Props are not UTF8 encoded",
+        }
+    }
+}
+
+type StartupResult<T> = Result<T, StartupError>;
 
 pub struct Client {
     inner: AppInner,
@@ -95,28 +118,38 @@ impl Client {
         )
     }
 
-    fn get_current_url() -> Option<String> {
-        web_sys::window()?.location().pathname().ok()
+    fn get_window() -> StartupResult<Window> {
+        web_sys::window().ok_or(StartupError::NoWindow)
     }
 
-    fn get_window_object() -> Option<Object> {
-        web_sys::window()?.get(NEXT_RS_WINDOW_OBJECT_KEY)
+    fn get_current_url() -> StartupResult<String> {
+        Self::get_window()?
+            .location()
+            .pathname()
+            .map_err(|_| StartupError::NoPathname)
     }
 
-    fn get_serialized_props() -> Option<String> {
-        let window_object: JsValue = Self::get_window_object()?.into();
+    fn get_next_rs_object() -> StartupResult<Object> {
+        Self::get_window()?
+            .get(NEXT_RS_WINDOW_OBJECT_KEY)
+            .ok_or(StartupError::NoNextRsObject)
+    }
+
+    fn get_serialized_props() -> StartupResult<String> {
+        let window_object: JsValue = Self::get_next_rs_object()?.into();
         let props_key = js_sys::JsString::from(SERIALIZED_PROPS_KEY);
-        let props_string = js_sys::Reflect::get(&window_object, &props_key).ok()?;
-        props_string.as_string()
+        let props_string =
+            js_sys::Reflect::get(&window_object, &props_key).map_err(|_| StartupError::NoProps)?;
+        props_string.as_string().ok_or(StartupError::PropsNotUTF8)
     }
 
-    fn get_url_and_props() -> Option<(String, String)> {
+    fn get_url_and_props() -> StartupResult<(String, String)> {
         let url = Self::get_current_url()?;
         let props = Self::get_serialized_props()?;
-        Some((url, props))
+        Ok((url, props))
     }
 
-    fn try_run(&self) -> Option<()> {
+    fn try_run(&self) -> StartupResult<()> {
         let (url, serialized_props) = Self::get_url_and_props()?;
         log("path: ");
         log(&url);
@@ -125,10 +158,12 @@ impl Client {
         log("start hydrate.");
         self.hydrate(&url, &serialized_props);
         log("hydrate finished.");
-        Some(())
+        Ok(())
     }
 
     pub fn run(&self) {
-        self.try_run().unwrap_throw();
+        if let Err(err) = self.try_run() {
+            throw_str(err.error_msg());
+        }
     }
 }
