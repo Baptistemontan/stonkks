@@ -67,7 +67,7 @@ impl Server {
         let html = sycamore::render_to_string(|cx| {
             let DynRenderResult { body, head } = unsafe { page.render_server(cx, props) };
             let body = self.layout().render_server(cx, body);
-            default_html_view(cx, body, head, &serialized_props)
+            default_html_view(cx, body, head, &serialized_props, true)
         });
         Some(format!(
             "<!DOCTYPE html><html id=\"{}\">{}</html>",
@@ -81,7 +81,7 @@ impl Server {
         let html = sycamore::render_to_string(|cx| {
             let DynRenderResult { body, head } = unsafe { page.render_server(cx, props) };
             let body = self.layout().render_server(cx, body);
-            default_html_view(cx, body, head, &serialized_props)
+            default_html_view(cx, body, head, &serialized_props, true)
         });
         format!(
             "<!DOCTYPE html><html id=\"{}\">{}</html>",

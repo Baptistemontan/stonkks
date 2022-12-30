@@ -168,14 +168,22 @@ fn default_head<G: Html>(cx: Scope, head: View<G>, props: &str) -> View<G> {
     }
 }
 
-pub fn default_html_view<G: Html>(cx: Scope, body: View<G>, head: View<G>, props: &str) -> View<G> {
+/// the render imports argument is for client rendering, sycamore::render re-render everyhting, so it re-init the wasm file
+/// and start an infinite loop.
+pub fn default_html_view<G: Html>(cx: Scope, body: View<G>, head: View<G>, props: &str, render_imports: bool) -> View<G> {
     let head = default_head(cx, head, props);
     view! { cx,
         (head)
         body {
-            script(type="module") {
-                "import init from '"(CLIENT_JS_FILE_PATH)"';init('"(CLIENT_WASM_FILE_PATH)"');"
-            }
+            (if render_imports {
+                view! { cx,
+                    script(type="module") {
+                        "import init from '"(CLIENT_JS_FILE_PATH)"';init('"(CLIENT_WASM_FILE_PATH)"');"
+                    }
+                }
+            } else {
+                view! { cx, }
+            })
             (body)
         }
     }

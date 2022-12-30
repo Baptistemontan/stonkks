@@ -11,7 +11,7 @@ use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
 use wasm_bindgen::{throw_str, JsValue};
-use web_sys::Window;
+use web_sys::{Window, Element};
 
 fn log(msg: &str) {
     let s = JsString::from(msg);
@@ -94,7 +94,7 @@ impl Client {
         Ok((page, props))
     }
 
-    pub fn hydrate<'url>(&self, url: &'url str, serialized_props: &str) {
+    pub fn prepare_render<'url>(&self, url: &'url str, serialized_props: &str) -> (&dyn DynComponent, PropsUntypedPtr, Element) {
         let url_infos = UrlInfos::parse_from_url(url);
         let (page, props) = self
             .find_page_and_props(&url_infos, serialized_props)
@@ -108,11 +108,32 @@ impl Client {
             .unwrap()
             .unwrap();
 
+        (page, props, root)
+    }
+
+    pub fn render<'url>(&self, url: &'url str, serialized_props: &str) {
+        let (page, props, root) = self.prepare_render(url, serialized_props);
+
+        root.set_inner_html("");
+
+        sycamore::render_to(
+            |cx| {
+                let DynRenderResult { body, head } = unsafe { page.render_client(cx, props) };
+                let body = self.layout().render_client(cx, body);
+                default_html_view(cx, body, head, &serialized_props, false)
+            },
+            &root,
+        )
+    }
+
+    pub fn hydrate<'url>(&self, url: &'url str, serialized_props: &str) {
+        let (page, props, root) = self.prepare_render(url, serialized_props);
+
         sycamore::hydrate_to(
             |cx| {
                 let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
                 let body = self.layout().hydrate(cx, body);
-                default_html_view(cx, body, head, &serialized_props)
+                default_html_view(cx, body, head, &serialized_props, false)
             },
             &root,
         )
@@ -156,7 +177,8 @@ impl Client {
         log("props: ");
         log(&serialized_props);
         log("start hydrate.");
-        self.hydrate(&url, &serialized_props);
+        // self.hydrate(&url, &serialized_props);
+        self.render(&url, &serialized_props);
         log("hydrate finished.");
         Ok(())
     }
