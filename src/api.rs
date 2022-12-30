@@ -11,6 +11,13 @@ impl ApiRoutes {
         self.add_boxed_route(route);
     }
 
+    pub fn add_routes<I>(&mut self, routes: I)
+    where
+        I: IntoIterator<Item = Box<dyn DynApi>>,
+    {
+        self.0.extend(routes);
+    }
+
     pub fn add_boxed_route(&mut self, route: Box<dyn DynApi>) {
         self.0.push(route);
     }

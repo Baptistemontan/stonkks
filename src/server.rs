@@ -13,6 +13,11 @@ pub struct Server {
     api: ApiRoutes,
 }
 
+pub enum Response {
+    Html(String),
+    Api(String),
+}
+
 impl Server {
     pub(crate) fn new(inner: AppInner, api: ApiRoutes) -> Self {
         Server { inner, api }
@@ -82,5 +87,18 @@ impl Server {
             "<!DOCTYPE html><html id=\"{}\">{}</html>",
             ROOT_ELEMENT_ID, html
         )
+    }
+
+    pub async fn respond<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<Response> {
+        if url_infos.segments().first() == Some(&"api") {
+            self.api
+                .find_and_respond(url_infos)
+                .await
+                .map(Response::Api)
+        } else {
+            self.try_render_to_string(url_infos)
+                .await
+                .map(Response::Html)
+        }
     }
 }

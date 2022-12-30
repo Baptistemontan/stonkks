@@ -5,6 +5,7 @@ use crate::pages::StaticPages;
 use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
+use next_rs_traits::api::DynApi;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
 use sycamore::prelude::*;
@@ -62,6 +63,19 @@ impl App {
 
     pub fn not_found<T: NotFoundPage>(mut self, not_found: T) -> Self {
         self.not_found_page = not_found.into();
+        self
+    }
+
+    pub fn api<T: Api>(mut self, api: T) -> Self {
+        self.api.add_route(api);
+        self
+    }
+
+    pub fn apis<I>(mut self, apis: I) -> Self
+    where
+        I: IntoIterator<Item = Box<dyn DynApi>>,
+    {
+        self.api.add_routes(apis);
         self
     }
 
