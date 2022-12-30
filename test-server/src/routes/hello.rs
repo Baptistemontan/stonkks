@@ -18,12 +18,18 @@ impl<'a> Route<'a> for HelloRoute<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct MyRessource(pub String);
+
 #[async_trait::async_trait]
 impl Api for Hello {
     type Err<'a> = &'a str;
-    type Ressource = ();
-    async fn respond<'url, 'r>(route: Self::Route<'url>, _ressources: ()) -> Result<String, &'url str>{
-        Ok(format!("name: {}", route.0))
+    type Ressource = RessourceExtractor<MyRessource>;
+    async fn respond<'url, 'r>(
+        route: Self::Route<'url>,
+        ressource: &'r MyRessource,
+    ) -> Result<String, &'url str> {
+        Ok(format!("name: {}, ressource: {}", route.0, ressource.0))
         // Err(route.0)
     }
 }

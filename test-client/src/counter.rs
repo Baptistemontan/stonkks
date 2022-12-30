@@ -78,7 +78,7 @@ impl Routable for Counter {
 
 #[async_trait::async_trait]
 impl DynPage for Counter {
-    type Err<'url> = (); 
+    type Err<'url> = ();
     async fn get_server_props<'url>(route: Self::Route<'url>) -> Result<Self::Props, ()> {
         Ok(CounterProps { count: route.0 })
     }

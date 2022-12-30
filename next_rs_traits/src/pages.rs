@@ -144,7 +144,9 @@ impl<T: Page> DynBasePage for T {
 #[async_trait]
 pub trait DynPage: Page + Sync {
     type Err<'url>: Debug;
-    async fn get_server_props<'url>(route: Self::Route<'url>) -> Result<Self::Props, Self::Err<'url>>;
+    async fn get_server_props<'url>(
+        route: Self::Route<'url>,
+    ) -> Result<Self::Props, Self::Err<'url>>;
 }
 
 #[async_trait]
@@ -166,9 +168,8 @@ impl<T: DynPage> DynPageDyn for T {
         let props_result = <T as DynPage>::get_server_props(*route).await;
         match props_result {
             Ok(props) => Ok(PropsUntypedPtr::new::<T>(props)),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
-        
     }
 
     fn as_dyn_base_page(&self) -> &dyn DynBasePage {

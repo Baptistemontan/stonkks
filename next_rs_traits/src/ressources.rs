@@ -1,4 +1,7 @@
-use std::{any::{TypeId, Any}, collections::HashMap};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+};
 
 #[derive(Default)]
 pub struct RessourceMap(HashMap<TypeId, Box<dyn Any + Send + Sync>>);
@@ -8,7 +11,10 @@ impl RessourceMap {
         T::extract(self)
     }
 
-    pub fn add_ressource<T: AnyRessource>(&mut self, ressource: T) -> Option<Box<dyn Any + Send + Sync>> {
+    pub fn add_ressource<T: AnyRessource>(
+        &mut self,
+        ressource: T,
+    ) -> Option<Box<dyn Any + Send + Sync>> {
         let type_id = TypeId::of::<T>();
         self.0.insert(type_id, Box::new(ressource))
     }
@@ -37,24 +43,22 @@ impl ExtractRessources for () {
     }
 }
 
-pub struct Ressource<T: AnyRessource>(pub T);
-
+pub struct RessourceExtractor<T: AnyRessource>(pub T);
 
 pub trait AnyRessource: Any + Send + Sync {}
 
-impl<T: Send + Sync + Any> AnyRessource for T { }
+impl<T: Send + Sync + Any> AnyRessource for T {}
 
-
-impl<T: AnyRessource> ExtractRessources for Ressource<T> {
+impl<T: AnyRessource> ExtractRessources for RessourceExtractor<T> {
     type Output<'a> = &'a T;
     fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
         ressources.get_ressource::<T>()
     }
 }
 
-pub struct Ressources<T>(pub T);
+pub struct MultiRessourcesExtractor<T>(pub T);
 
-impl<T: AnyRessource, U: AnyRessource> ExtractRessources for Ressources<(T, U)> {
+impl<T: AnyRessource, U: AnyRessource> ExtractRessources for MultiRessourcesExtractor<(T, U)> {
     type Output<'a> = (&'a T, &'a U);
 
     fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {

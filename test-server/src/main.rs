@@ -1,5 +1,5 @@
 mod routes;
-use routes::hello::Hello;
+use routes::hello::{Hello, MyRessource};
 
 use std::{ops::Deref, sync::Arc};
 
@@ -61,11 +61,11 @@ impl Handler for MyServer {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
-            },
+            }
             Some(Err(err)) => {
                 eprintln!("An error occured at {} :\n{}", url.url(), err);
                 Outcome::Failure(Status::InternalServerError)
-            } 
+            }
             None => Outcome::Forward(data),
         }
     }
@@ -109,7 +109,11 @@ impl Into<Vec<RocketRoute>> for NotFound {
 
 #[launch]
 fn rocket() -> _ {
-    let app = get_app().api(Hello).into_server();
+    let ressource = MyRessource("test_ressource".into());
+    let app = get_app()
+        .ressource_unwrap(ressource)
+        .api(Hello)
+        .into_server();
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
     let not_found = NotFound(app);

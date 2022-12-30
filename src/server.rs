@@ -22,7 +22,11 @@ pub enum Response {
 
 impl Server {
     pub(crate) fn new(inner: AppInner, api: ApiRoutes, ressources: RessourceMap) -> Self {
-        Server { inner, api, ressources }
+        Server {
+            inner,
+            api,
+            ressources,
+        }
     }
 
     fn dyn_pages(&self) -> &DynPages {
@@ -51,8 +55,8 @@ impl Server {
         if let Some(result) = self.dyn_pages().find_dyn_page_and_props(url_infos).await {
             return match result {
                 Ok((page, props)) => Some(Ok((page.as_dyn_component(), props))),
-                Err(err) => Some(Err(err))
-            }
+                Err(err) => Some(Err(err)),
+            };
         }
         None
     }
@@ -66,11 +70,14 @@ impl Server {
             .unwrap_or_else(|| Ok((self.not_found_page(), NotFoundPageProps::new_untyped())))
     }
 
-    pub async fn try_render_to_string<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<Result<String, String>> {
+    pub async fn try_render_to_string<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<Result<String, String>> {
         let result = self.try_find_page_and_props(url_infos).await?;
         let (page, props) = match result {
             Ok(page_and_props) => page_and_props,
-            Err(err) => return Some(Err(err)) 
+            Err(err) => return Some(Err(err)),
         };
         let serialized_props = unsafe { page.serialize_props(&props).unwrap() };
         let html = sycamore::render_to_string(|cx| {
@@ -98,24 +105,29 @@ impl Server {
         )
     }
 
-    pub async fn respond<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<Result<Response, String>> {
+    pub async fn respond<'url>(
+        &self,
+        url_infos: &UrlInfos<'url>,
+    ) -> Option<Result<Response, String>> {
         match url_infos.segments().first() {
             Some(&"public") => None, // static file
-            Some(&"api") => { // api route
+            Some(&"api") => {
+                // api route
                 self.api
                     .find_and_respond(url_infos, &self.ressources)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Api))
                     .transpose()
-            },
-            _ => { // possible page
+            }
+            _ => {
+                // possible page
                 self.try_render_to_string(url_infos)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Html))
                     .transpose()
-            } 
+            }
         }
     }
 }

@@ -91,6 +91,15 @@ impl App {
         }
     }
 
+    pub fn ressource_unwrap<T: Any + Send + Sync>(mut self, ressource: T) -> Self {
+        if let Some(_) = self.ressources.add_ressource(ressource) {
+            let name = std::any::type_name::<T>();
+            panic!("This ressource was already present: {}.", name);
+        } else {
+            self
+        }
+    }
+
     fn into_inner(self) -> AppInner {
         AppInner {
             dyn_pages: self.dyn_pages,
