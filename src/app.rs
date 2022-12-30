@@ -79,7 +79,13 @@ impl App {
     }
 
     pub fn into_server(self) -> Server {
-        let App { dyn_pages, static_pages, api, layout, not_found_page } = self;
+        let App {
+            dyn_pages,
+            static_pages,
+            api,
+            layout,
+            not_found_page,
+        } = self;
         let inner = AppInner::new(dyn_pages, static_pages, layout, not_found_page);
         Server::new(inner, api)
     }
@@ -93,12 +99,19 @@ pub struct AppInner {
 }
 
 impl AppInner {
-    pub fn new(dyn_pages: DynPages,
+    pub fn new(
+        dyn_pages: DynPages,
         static_pages: StaticPages,
         layout: AppLayout,
-        not_found_page: NotFound) -> Self {
-            AppInner { dyn_pages, static_pages, layout, not_found_page }
+        not_found_page: NotFound,
+    ) -> Self {
+        AppInner {
+            dyn_pages,
+            static_pages,
+            layout,
+            not_found_page,
         }
+    }
 
     pub fn dyn_pages(&self) -> &DynPages {
         &self.dyn_pages

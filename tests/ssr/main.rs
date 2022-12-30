@@ -129,8 +129,9 @@ fn test_routing() {
             dyn_page.render_server(cx, PropsUntypedPtr::new::<MyDynPage>(MyProps(props.into())));
         result.body
     });
-    let ssr_view =
-        sycamore::render_to_string(|cx| MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx)));
+    let ssr_view = sycamore::render_to_string(|cx| {
+        MyDynPage::render(cx, MyProps(props.into()).into_reactive_props(cx))
+    });
 
     assert_eq!(dyn_ssr_view, ssr_view);
     assert!(ssr_view.contains(props));

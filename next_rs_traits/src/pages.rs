@@ -66,9 +66,9 @@ pub trait NotFoundPage: Component<Props = NotFoundPageProps> {}
 
 impl<T: Component<Props = NotFoundPageProps>> NotFoundPage for T {}
 
-pub trait Page: Component + Routable { }
+pub trait Page: Component + Routable {}
 
-impl<T: Component + Routable> Page for T { }
+impl<T: Component + Routable> Page for T {}
 
 pub struct DynRenderResult<G: Html> {
     pub body: View<G>,

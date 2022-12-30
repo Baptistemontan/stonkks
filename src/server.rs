@@ -10,7 +10,7 @@ use next_rs_traits::pointers::*;
 
 pub struct Server {
     inner: AppInner,
-    api: ApiRoutes
+    api: ApiRoutes,
 }
 
 impl Server {
