@@ -1,6 +1,9 @@
+mod routes;
+use routes::hello::Hello;
+
 use std::{ops::Deref, sync::Arc};
 
-use next_rs::prelude::*;
+use next_rs::prelude::{Response as NextResponse, *};
 use rocket::{
     fs::{relative, FileServer},
     http::{ContentType, Method, Status},
@@ -43,10 +46,17 @@ impl Handler for MyServer {
         data: Data<'r>,
     ) -> Outcome<Response<'r>, Status, Data<'r>> {
         let url = Uri::from_request(request);
-        let result = self.0.try_render_to_string(&url).await;
+        let result = self.0.respond(&url).await;
         match result {
-            Some(html) => {
+            Some(NextResponse::Html(html)) => {
                 let response = (ContentType::HTML, html).respond_to(request);
+                match response {
+                    Ok(rep) => Outcome::Success(rep),
+                    Err(status) => Outcome::Failure(status),
+                }
+            }
+            Some(NextResponse::Api(api_response)) => {
+                let response = (ContentType::JSON, api_response).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
@@ -95,12 +105,12 @@ impl Into<Vec<RocketRoute>> for NotFound {
 
 #[launch]
 fn rocket() -> _ {
-    let app = get_app().into_server();
+    let app = get_app().api(Hello).into_server();
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
     let not_found = NotFound(app);
     rocket::build()
-        .mount("/public", FileServer::from(relative!("static")).rank(2))
+        .mount("/public", FileServer::from(relative!("static")))
         .mount("/", server)
         .mount("/", not_found)
 }

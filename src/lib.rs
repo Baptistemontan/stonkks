@@ -10,7 +10,7 @@ pub mod prelude {
     pub use app::App;
     pub use client::Client;
     pub use next_rs_traits::predule::*;
-    pub use server::Server;
+    pub use server::{Response, Server};
 }
 
 // TODO:
