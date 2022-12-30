@@ -7,9 +7,11 @@ use super::prelude::*;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
+use next_rs_traits::ressources::RessourceMap;
 
 pub struct Server {
     inner: AppInner,
+    ressources: RessourceMap,
     api: ApiRoutes,
 }
 
@@ -19,8 +21,8 @@ pub enum Response {
 }
 
 impl Server {
-    pub(crate) fn new(inner: AppInner, api: ApiRoutes) -> Self {
-        Server { inner, api }
+    pub(crate) fn new(inner: AppInner, api: ApiRoutes, ressources: RessourceMap) -> Self {
+        Server { inner, api, ressources }
     }
 
     fn dyn_pages(&self) -> &DynPages {
@@ -101,7 +103,7 @@ impl Server {
             Some(&"public") => None, // static file
             Some(&"api") => { // api route
                 self.api
-                    .find_and_respond(url_infos)
+                    .find_and_respond(url_infos, &self.ressources)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Api))

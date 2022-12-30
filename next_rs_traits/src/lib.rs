@@ -4,6 +4,7 @@ pub mod pages;
 pub mod pointers;
 pub mod props;
 pub mod routes;
+pub mod ressources;
 
 pub mod predule {
     use super::*;

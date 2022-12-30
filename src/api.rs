@@ -1,6 +1,7 @@
 use next_rs_traits::api::DynApi;
 use next_rs_traits::pointers::*;
 use next_rs_traits::predule::*;
+use next_rs_traits::ressources::RessourceMap;
 
 #[derive(Default)]
 pub struct ApiRoutes(Vec<Box<dyn DynApi>>);
@@ -34,9 +35,9 @@ impl ApiRoutes {
         None
     }
 
-    pub async fn find_and_respond<'url>(&self, url_infos: &UrlInfos<'url>) -> Option<Result<String, String>> {
+    pub async fn find_and_respond<'url>(&self, url_infos: &UrlInfos<'url>, ressources: &RessourceMap) -> Option<Result<String, String>> {
         let (api, route) = self.find_api(url_infos)?;
-        let response = unsafe { api.respond(route).await };
+        let response = unsafe { api.respond(route, ressources).await };
         Some(response)
     }
 }

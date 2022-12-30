@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::api::ApiRoutes;
 use crate::client::Client;
 use crate::pages::StaticPages;
@@ -8,6 +10,7 @@ use super::prelude::*;
 use next_rs_traits::api::DynApi;
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
+use next_rs_traits::ressources::RessourceMap;
 use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";
@@ -21,6 +24,7 @@ pub struct App {
     dyn_pages: DynPages,
     static_pages: StaticPages,
     api: ApiRoutes,
+    ressources: RessourceMap,
     layout: AppLayout,
     not_found_page: NotFound,
 }
@@ -79,6 +83,14 @@ impl App {
         self
     }
 
+    pub fn ressource<T: Any + Send + Sync>(mut self, ressource: T) -> Result<Self, T> {
+        if let Some(old_value) = self.ressources.add_ressource(ressource) {
+            Err(*old_value.downcast::<T>().unwrap())
+        } else {
+            Ok(self)
+        }
+    }
+
     fn into_inner(self) -> AppInner {
         AppInner {
             dyn_pages: self.dyn_pages,
@@ -99,9 +111,10 @@ impl App {
             api,
             layout,
             not_found_page,
+            ressources,
         } = self;
         let inner = AppInner::new(dyn_pages, static_pages, layout, not_found_page);
-        Server::new(inner, api)
+        Server::new(inner, api, ressources)
     }
 }
 

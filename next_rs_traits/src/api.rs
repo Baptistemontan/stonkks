@@ -1,5 +1,8 @@
 use std::fmt::Debug;
 
+use crate::ressources::ExtractRessources;
+use crate::ressources::RessourceMap;
+
 use super::pointers::*;
 use super::predule::*;
 use super::routes::DynRoutable;
@@ -17,18 +20,28 @@ use super::routes::DynRoutable;
 #[async_trait::async_trait]
 pub trait Api: Routable {
     type Err<'url>: Debug;
-    async fn respond<'url>(route: Self::Route<'url>) -> Result<String, Self::Err<'url>>;
+    type Ressource: ExtractRessources; 
+    async fn respond<'url, 'r>(route: Self::Route<'url>, ressources: ExtractedRessource<'r, Self>) -> Result<String, Self::Err<'url>>;
 }
+
+pub type ExtractedRessource<'a, T> = <<T as Api>::Ressource as ExtractRessources>::Output<'a>;
 
 #[async_trait::async_trait]
 pub trait DynApi: DynRoutable {
-    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> Result<String, String>;
+    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>, ressources: &RessourceMap) -> Result<String, String>;
 }
 
 #[async_trait::async_trait]
 impl<T: Api> DynApi for T {
-    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> Result<String, String> {
+    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>, ressources: &RessourceMap) -> Result<String, String> {
         let route = route_ptr.cast::<T>();
-        <T as Api>::respond(*route).await.map_err(|err| format!("{:?}", err))
+        let ressource = ressources.extract::<T::Ressource>();
+        let ressource = match ressource {
+            Ok(ressource) => ressource,
+            Err(missing_ressource_name) => panic!("Missing ressource {}.", missing_ressource_name)
+        };
+        <T as Api>::respond(*route, ressource).await.map_err(|err| format!("{:?}", err))
     }
 }
+
+
