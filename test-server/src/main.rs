@@ -63,7 +63,7 @@ impl Handler for MyServer {
                 }
             },
             Some(Err(err)) => {
-                eprintln!("An error occured: {}", err);
+                eprintln!("An error occured at {} :\n{}", url.url(), err);
                 Outcome::Failure(Status::InternalServerError)
             } 
             None => Outcome::Forward(data),
