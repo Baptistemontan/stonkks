@@ -11,7 +11,7 @@ use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
 use serde_json::Error;
 use wasm_bindgen::{throw_str, JsValue};
-use web_sys::{Window, Element};
+use web_sys::{Element, Window};
 
 fn log(msg: &str) {
     let s = JsString::from(msg);
@@ -94,7 +94,11 @@ impl Client {
         Ok((page, props))
     }
 
-    pub fn prepare_render<'url>(&self, url: &'url str, serialized_props: &str) -> (&dyn DynComponent, PropsUntypedPtr, Element) {
+    pub fn prepare_render<'url>(
+        &self,
+        url: &'url str,
+        serialized_props: &str,
+    ) -> (&dyn DynComponent, PropsUntypedPtr, Element) {
         let url_infos = UrlInfos::parse_from_url(url);
         let (page, props) = self
             .find_page_and_props(&url_infos, serialized_props)
