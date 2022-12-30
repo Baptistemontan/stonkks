@@ -7,6 +7,11 @@ use super::routes::DynRoutable;
 /// Also need a way for ressources,
 /// they could be store in a HashMap<TypeId, Box<dyn Any>>,
 /// but I will take care of that later.
+/// TODO: 
+///  - support for method type (GET, POST, ect..) (only support get rn)
+///  - ressources
+///  - better return type
+///  - ??
 #[async_trait::async_trait]
 pub trait Api: Routable {
     async fn respond<'url>(route: Self::Route<'url>) -> String;
