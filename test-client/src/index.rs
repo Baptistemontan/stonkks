@@ -11,6 +11,9 @@ impl Component for Index {
             h1 {
                 "Index Page."
             }
+            a(href="/counter/45") {
+                "counter"
+            }
         }
     }
 
