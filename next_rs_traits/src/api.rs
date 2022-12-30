@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use super::pointers::*;
 use super::predule::*;
 use super::routes::DynRoutable;
@@ -14,19 +16,19 @@ use super::routes::DynRoutable;
 ///  - ??
 #[async_trait::async_trait]
 pub trait Api: Routable {
-    async fn respond<'url>(route: Self::Route<'url>) -> String;
+    type Err<'url>: Debug;
+    async fn respond<'url>(route: Self::Route<'url>) -> Result<String, Self::Err<'url>>;
 }
 
 #[async_trait::async_trait]
 pub trait DynApi: DynRoutable {
-    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> String;
+    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> Result<String, String>;
 }
 
 #[async_trait::async_trait]
 impl<T: Api> DynApi for T {
-    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> String {
+    async unsafe fn respond<'url>(&self, route_ptr: RouteUntypedPtr<'url>) -> Result<String, String> {
         let route = route_ptr.cast::<T>();
-        let response = <T as Api>::respond(*route).await;
-        response
+        <T as Api>::respond(*route).await.map_err(|err| format!("{:?}", err))
     }
 }

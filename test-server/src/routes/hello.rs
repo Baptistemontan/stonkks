@@ -17,9 +17,12 @@ impl<'a> Route<'a> for HelloRoute<'a> {
         }
     }
 }
+
 #[async_trait::async_trait]
 impl Api for Hello {
-    async fn respond<'url>(route: Self::Route<'url>) -> String {
-        format!("name: {}", route.0)
+    type Err<'a> = &'a str;
+    async fn respond<'url>(route: Self::Route<'url>) -> Result<String, &'url str>{
+        Ok(format!("name: {}", route.0))
+        // Err(route.0)
     }
 }

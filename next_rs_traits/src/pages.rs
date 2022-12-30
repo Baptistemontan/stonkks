@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use async_trait::async_trait;
 use sycamore::prelude::*;
 
@@ -141,7 +143,8 @@ impl<T: Page> DynBasePage for T {
 
 #[async_trait]
 pub trait DynPage: Page + Sync {
-    async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props;
+    type Err<'url>: Debug;
+    async fn get_server_props<'url>(route: Self::Route<'url>) -> Result<Self::Props, Self::Err<'url>>;
 }
 
 #[async_trait]
@@ -149,7 +152,7 @@ pub trait DynPageDyn: DynBasePage {
     async unsafe fn get_server_props<'url>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-    ) -> PropsUntypedPtr;
+    ) -> Result<PropsUntypedPtr, String>;
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
 
@@ -158,10 +161,14 @@ impl<T: DynPage> DynPageDyn for T {
     async unsafe fn get_server_props<'url>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-    ) -> PropsUntypedPtr {
+    ) -> Result<PropsUntypedPtr, String> {
         let route = route_ptr.cast::<T>();
-        let props = <T as DynPage>::get_server_props(*route).await;
-        PropsUntypedPtr::new::<T>(props)
+        let props_result = <T as DynPage>::get_server_props(*route).await;
+        match props_result {
+            Ok(props) => Ok(PropsUntypedPtr::new::<T>(props)),
+            Err(err) => Err(format!("{:?}", err))
+        }
+        
     }
 
     fn as_dyn_base_page(&self) -> &dyn DynBasePage {

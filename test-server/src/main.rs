@@ -48,20 +48,24 @@ impl Handler for MyServer {
         let url = Uri::from_request(request);
         let result = self.0.respond(&url).await;
         match result {
-            Some(NextResponse::Html(html)) => {
+            Some(Ok(NextResponse::Html(html))) => {
                 let response = (ContentType::HTML, html).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
             }
-            Some(NextResponse::Api(api_response)) => {
+            Some(Ok(NextResponse::Api(api_response))) => {
                 let response = (ContentType::JSON, api_response).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
-            }
+            },
+            Some(Err(err)) => {
+                eprintln!("An error occured: {}", err);
+                Outcome::Failure(Status::InternalServerError)
+            } 
             None => Outcome::Forward(data),
         }
     }

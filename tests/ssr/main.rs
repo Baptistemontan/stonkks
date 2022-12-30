@@ -76,8 +76,10 @@ impl Routable for MyDynPage {
 
 #[async_trait]
 impl DynPage for MyDynPage {
-    async fn get_server_props<'url>(route: Self::Route<'url>) -> Self::Props {
-        MyProps(route.0.to_string())
+    type Err<'url> = ();
+
+    async fn get_server_props<'url>(route: Self::Route<'url>) -> Result<Self::Props, ()> {
+        Ok(MyProps(route.0.to_string()))
     }
 }
 
@@ -106,7 +108,7 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
-    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap().unwrap();
 
     assert!(rendered_html.contains(greeting));
 }
@@ -148,7 +150,7 @@ async fn test_layout() {
 
     let url_infos = UrlInfos::parse_from_url(&url);
 
-    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap().unwrap();
 
     println!("{}", rendered_html);
 
@@ -205,7 +207,7 @@ async fn test_dyn_page_total_render() {
 
     let server = app.into_server();
 
-    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap();
+    let rendered_html = server.try_render_to_string(&url_infos).await.unwrap().unwrap();
 
     println!("{}", rendered_html);
 

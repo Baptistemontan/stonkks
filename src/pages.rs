@@ -23,10 +23,10 @@ impl DynPages {
     pub async fn find_dyn_page_and_props<'url>(
         &self,
         url_infos: &UrlInfos<'url>,
-    ) -> Option<(&'_ dyn DynPageDyn, PropsUntypedPtr)> {
+    ) -> Option<Result<(&'_ dyn DynPageDyn, PropsUntypedPtr), String>> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
-        let props = unsafe { page.get_server_props(route).await };
-        Some((page, props))
+        let props_result = unsafe { page.get_server_props(route).await };
+        Some(props_result.map(|props| (page, props)))
     }
 
     pub fn add_page<T: DynPage>(&mut self, page: T) {
