@@ -1,8 +1,13 @@
 use next_rs::prelude::*;
-use rocket::{get, State, launch, routes, fs::{FileServer, relative}, http::Status, response::content::RawHtml};
+use rocket::{
+    fs::{relative, FileServer},
+    get, launch,
+    response::content::RawHtml,
+    routes, State,
+};
 use test_client::get_app;
 
-use rocket::request::{FromRequest, Request, Outcome};
+use rocket::request::{FromRequest, Outcome, Request};
 
 struct Uri<'a>(pub UrlInfos<'a>);
 
@@ -29,8 +34,7 @@ async fn hello(uri: Uri<'_>, app: &State<Server>) -> RawHtml<String> {
 fn rocket() -> _ {
     let server = get_app().into_server();
     rocket::build()
-    .manage(server) 
-    .mount("/public", FileServer::from(relative!("static")))
-    .mount("/", routes![hello])
+        .manage(server)
+        .mount("/public", FileServer::from(relative!("static")))
+        .mount("/", routes![hello])
 }
-
