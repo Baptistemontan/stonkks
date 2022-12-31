@@ -95,6 +95,14 @@ struct NotFound(Arc<Server>);
 impl rocket::catcher::Handler for NotFound {
     async fn handle<'r>(&self, _status: Status, request: &'r Request<'_>) -> CatcherResult<'r> {
         let html = self.0.render_not_found();
+        let html = match html {
+            Ok(html) => html,
+            Err(err) => {
+                let uri = Uri::from_request(request);
+                error_!("An error occured at {} while rendering the 404 page: {}", uri.url(), err);
+                return Err(Status::InternalServerError);
+            } 
+        };
         (Status::NotFound, (ContentType::HTML, html)).respond_to(request)
     }
 }
