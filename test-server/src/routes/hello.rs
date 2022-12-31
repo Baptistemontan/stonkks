@@ -32,7 +32,10 @@ impl Api for Hello {
         MyRessource(counter): &'r MyRessource,
     ) -> Result<String, &'url str> {
         let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        Ok(format!("{{\"name\":\"{}\",\"count\":\"{}\"}}", route.0, count))
+        Ok(format!(
+            "{{\"name\":\"{}\",\"count\":\"{}\"}}",
+            route.0, count
+        ))
         // Err(route.0)
     }
 }
