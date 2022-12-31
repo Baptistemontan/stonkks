@@ -11,9 +11,11 @@ use rocket::{
     outcome::Outcome,
     response::Responder,
     route::Handler,
-    Data, Response, Route as RocketRoute,
+    Catcher, Data, Response, Route as RocketRoute,
 };
 use test_client::get_app;
+
+use rocket::catcher::Result as CatcherResult;
 
 use rocket::request::Request;
 
@@ -81,29 +83,10 @@ impl Into<Vec<RocketRoute>> for MyServer {
 struct NotFound(Arc<Server>);
 
 #[async_trait::async_trait]
-impl Handler for NotFound {
-    async fn handle<'r>(
-        &self,
-        request: &'r Request<'_>,
-        _data: Data<'r>,
-    ) -> Outcome<Response<'r>, Status, Data<'r>> {
+impl rocket::catcher::Handler for NotFound {
+    async fn handle<'r>(&self, _status: Status, request: &'r Request<'_>) -> CatcherResult<'r> {
         let html = self.0.render_not_found();
-        let response = (Status::NotFound, (ContentType::HTML, html)).respond_to(request);
-        match response {
-            Ok(rep) => Outcome::Success(rep),
-            Err(status) => Outcome::Failure(status),
-        }
-    }
-}
-
-impl Into<Vec<RocketRoute>> for NotFound {
-    fn into(self) -> Vec<RocketRoute> {
-        vec![RocketRoute::ranked(
-            isize::MAX - 1,
-            Method::Get,
-            "/<_..>",
-            self,
-        )]
+        (Status::NotFound, (ContentType::HTML, html)).respond_to(request)
     }
 }
 
@@ -114,11 +97,13 @@ fn rocket() -> _ {
         .ressource_unwrap(ressource)
         .api(Hello)
         .into_server();
+
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
     let not_found = NotFound(app);
+    let not_found_catcher = Catcher::new::<u16, NotFound>(404, not_found);
     rocket::build()
         .mount("/public", FileServer::from(relative!("static")))
         .mount("/", server)
-        .mount("/", not_found)
+        .register("/", [not_found_catcher])
 }
