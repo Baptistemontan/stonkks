@@ -1,16 +1,16 @@
 use crate::app::{
-    default_html_view, AppInner, NEXT_RS_WINDOW_OBJECT_KEY, ROOT_ELEMENT_ID, SERIALIZED_PROPS_KEY,
+    default_html_view, AppInner, ROOT_ELEMENT_ID, SERIALIZED_PROPS_KEY, STONKKS_WINDOW_OBJECT_KEY,
 };
 use crate::pages::StaticPages;
 
 use super::pages::DynPages;
 use super::prelude::*;
 use js_sys::{JsString, Object};
-use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
-use next_rs_traits::pointers::*;
-use next_rs_traits::routes::UrlInfos;
 use serde_json::Error;
+use stonkks_traits::layout::DynLayout;
+use stonkks_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
+use stonkks_traits::pointers::*;
+use stonkks_traits::routes::UrlInfos;
 use wasm_bindgen::{throw_str, JsValue};
 use web_sys::{Element, Window};
 
@@ -23,7 +23,7 @@ enum StartupError {
     NoWindow,
     NoProps,
     NoPathname,
-    NoNextRsObject,
+    NoStonkksObject,
     PropsNotUTF8,
 }
 
@@ -31,9 +31,9 @@ impl StartupError {
     pub fn error_msg(self) -> &'static str {
         match self {
             StartupError::NoWindow => "Unable to aquire the window object.",
-            StartupError::NoProps => "No props present in the NextRs object.",
+            StartupError::NoProps => "No props present in the Stonkks object.",
             StartupError::NoPathname => "Unable to get the pathname.",
-            StartupError::NoNextRsObject => "No NextRs object.",
+            StartupError::NoStonkksObject => "No Stonkks object.",
             StartupError::PropsNotUTF8 => "Props are not UTF8 encoded.",
         }
     }
@@ -156,14 +156,14 @@ impl Client {
             .map_err(|_| StartupError::NoPathname)
     }
 
-    fn get_next_rs_object() -> StartupResult<Object> {
+    fn get_stonkks_object() -> StartupResult<Object> {
         Self::get_window()?
-            .get(NEXT_RS_WINDOW_OBJECT_KEY)
-            .ok_or(StartupError::NoNextRsObject)
+            .get(STONKKS_WINDOW_OBJECT_KEY)
+            .ok_or(StartupError::NoStonkksObject)
     }
 
     fn get_serialized_props() -> StartupResult<String> {
-        let window_object: JsValue = Self::get_next_rs_object()?.into();
+        let window_object: JsValue = Self::get_stonkks_object()?.into();
         let props_key = js_sys::JsString::from(SERIALIZED_PROPS_KEY);
         let props_string =
             js_sys::Reflect::get(&window_object, &props_key).map_err(|_| StartupError::NoProps)?;

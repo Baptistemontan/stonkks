@@ -7,17 +7,17 @@ use crate::pages::StaticPages;
 use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
-use next_rs_traits::api::DynApi;
-use next_rs_traits::layout::DynLayout;
-use next_rs_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
-use next_rs_traits::ressources::RessourceMap;
+use stonkks_traits::api::DynApi;
+use stonkks_traits::layout::DynLayout;
+use stonkks_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
+use stonkks_traits::ressources::RessourceMap;
 use sycamore::prelude::*;
 
-pub const SERIALIZED_PROPS_KEY: &str = "NEXT_RS_SERIALIZED_PROPS";
-pub const NEXT_RS_WINDOW_OBJECT_KEY: &str = "__NEXT_RS__";
-pub const CLIENT_WASM_FILE_PATH: &str = "/public/next_rs_wasm_app.wasm";
-pub const CLIENT_JS_FILE_PATH: &str = "/public/next_rs_js_app.js";
-pub const ROOT_ELEMENT_ID: &str = "__NEXT_RS_ROOT__";
+pub const SERIALIZED_PROPS_KEY: &str = "__STONKKS_SERIALIZED_PROPS__";
+pub const STONKKS_WINDOW_OBJECT_KEY: &str = "__STONKKS_OBJECT__";
+pub const CLIENT_WASM_FILE_PATH: &str = "/public/stonkks_wasm_app.wasm";
+pub const CLIENT_JS_FILE_PATH: &str = "/public/stonkks_js_app.js";
+pub const ROOT_ELEMENT_ID: &str = "__STONKKS_ROOT__";
 
 #[derive(Default)]
 pub struct App {
@@ -169,7 +169,7 @@ impl AppInner {
 fn window_object_script(props: &str) -> String {
     format!(
         "window.{0}=window.{0}||{{}};window.{0}.{1}=\'{2}\';",
-        NEXT_RS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props
+        STONKKS_WINDOW_OBJECT_KEY, SERIALIZED_PROPS_KEY, props
     )
 }
 

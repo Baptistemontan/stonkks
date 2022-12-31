@@ -1,5 +1,5 @@
 [package]
-name = "next_rs"
+name = "stonkks"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.60"
 sycamore = "0.8.2"
-next_rs_macro = { path = "./next_rs_macro" }
-next_rs_traits = { path = "./next_rs_traits" }
+stonkks_macro = { path = "./stonkks_macro" }
+stonkks_traits = { path = "./stonkks_traits" }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 web-sys = { version = "0.3.60", features = ["Location", "Window"] }
@@ -21,8 +21,8 @@ tokio = { version = "1.23.0", features = ["full"] }
 
 [workspace]
 members = [
-    "next_rs_macro",
-    "next_rs_traits",
+    "stonkks_macro",
+    "stonkks_traits",
     "test-client",
     "test-server"
 ]

@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicUsize;
 
-use next_rs::prelude::*;
+use stonkks::prelude::*;
 
 pub struct Hello;
 

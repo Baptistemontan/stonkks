@@ -1,8 +1,8 @@
-use next_rs_traits::api::DynApi;
-use next_rs_traits::pointers::*;
-use next_rs_traits::predule::*;
-use next_rs_traits::ressources::RessourceMap;
-use next_rs_traits::routes::UrlInfos;
+use stonkks_traits::api::DynApi;
+use stonkks_traits::pointers::*;
+use stonkks_traits::predule::*;
+use stonkks_traits::ressources::RessourceMap;
+use stonkks_traits::routes::UrlInfos;
 
 #[derive(Default)]
 pub struct ApiRoutes(Vec<Box<dyn DynApi>>);

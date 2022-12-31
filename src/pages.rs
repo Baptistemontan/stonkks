@@ -1,7 +1,7 @@
 use super::prelude::*;
-use next_rs_traits::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
-use next_rs_traits::pointers::*;
-use next_rs_traits::routes::UrlInfos;
+use stonkks_traits::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
+use stonkks_traits::pointers::*;
+use stonkks_traits::routes::UrlInfos;
 
 type BoxedDynPage = Box<dyn DynPageDyn>;
 type BoxedStaticPage = Box<dyn DynStaticPage>;

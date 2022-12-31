@@ -1,5 +1,5 @@
 [package]
-name = "next_rs_macro"
+name = "stonkks_macro"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,7 +9,7 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-next_rs_traits = { path = "../next_rs_traits" }
+stonkks_traits = { path = "../stonkks_traits" }
 nom = "7.1.1"
 proc-macro2 = "1.0.47"
 quote = "1.0.21"

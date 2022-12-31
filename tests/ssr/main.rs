@@ -1,8 +1,8 @@
 use async_trait::async_trait;
-use next_rs::prelude::*;
-use next_rs_traits::pages::DynBasePage;
-use next_rs_traits::pointers::*;
 use serde::{Deserialize, Serialize};
+use stonkks::prelude::*;
+use stonkks_traits::pages::DynBasePage;
+use stonkks_traits::pointers::*;
 use sycamore::prelude::*;
 
 struct MyLayout;

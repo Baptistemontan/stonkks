@@ -3,7 +3,6 @@ use routes::hello::{Hello, MyRessource};
 
 use std::{ops::Deref, sync::Arc};
 
-use next_rs::prelude::{Response as NextResponse, *};
 use rocket::{
     fs::{relative, FileServer},
     http::{ContentType, Method, Status},
@@ -13,6 +12,7 @@ use rocket::{
     route::Handler,
     Catcher, Data, Response, Route as RocketRoute,
 };
+use stonkks::prelude::{Response as StonkksResponse, *};
 use test_client::get_app;
 
 use rocket::log::error_;
@@ -52,14 +52,14 @@ impl Handler for MyServer {
         let url = Uri::from_request(request);
         let result = self.0.respond(&url).await;
         match result {
-            Some(Ok(NextResponse::Html(html))) => {
+            Some(Ok(StonkksResponse::Html(html))) => {
                 let response = (ContentType::HTML, html).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
             }
-            Some(Ok(NextResponse::Api(api_response))) => {
+            Some(Ok(StonkksResponse::Api(api_response))) => {
                 let response = (ContentType::JSON, api_response).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
@@ -70,7 +70,7 @@ impl Handler for MyServer {
                 error_!("An error occured at {} : {}", url.url(), err);
                 Outcome::Failure(Status::InternalServerError)
             }
-            Some(Ok(NextResponse::Props(props))) => {
+            Some(Ok(StonkksResponse::Props(props))) => {
                 let response = (ContentType::JSON, props).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),

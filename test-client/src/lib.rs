@@ -1,4 +1,4 @@
-use next_rs::prelude::*;
+use stonkks::prelude::*;
 
 mod counter;
 mod index;

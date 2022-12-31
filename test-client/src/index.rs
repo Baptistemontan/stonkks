@@ -1,4 +1,4 @@
-use next_rs::prelude::*;
+use stonkks::prelude::*;
 use sycamore::prelude::*;
 
 pub struct Index;

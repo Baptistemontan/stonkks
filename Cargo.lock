@@ -721,43 +721,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "next_rs"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "js-sys",
- "next_rs_macro",
- "next_rs_traits",
- "serde",
- "serde_json",
- "sycamore",
- "tokio",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "next_rs_macro"
-version = "0.1.0"
-dependencies = [
- "next_rs_traits",
- "nom",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "next_rs_traits"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "serde",
- "serde_json",
- "sycamore",
-]
-
-[[package]]
 name = "nom"
 version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1240,6 +1203,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "stonkks"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "stonkks_macro",
+ "stonkks_traits",
+ "sycamore",
+ "tokio",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "stonkks_macro"
+version = "0.1.0"
+dependencies = [
+ "nom",
+ "proc-macro2",
+ "quote",
+ "stonkks_traits",
+ "syn",
+]
+
+[[package]]
+name = "stonkks_traits"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "sycamore",
+]
+
+[[package]]
 name = "subtle"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1349,8 +1349,8 @@ dependencies = [
  "console_error_panic_hook",
  "console_log",
  "log",
- "next_rs",
  "serde",
+ "stonkks",
  "sycamore",
 ]
 
@@ -1359,8 +1359,8 @@ name = "test-server"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "next_rs",
  "rocket",
+ "stonkks",
  "test-client",
 ]
 

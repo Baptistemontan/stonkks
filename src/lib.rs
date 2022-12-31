@@ -9,8 +9,8 @@ pub mod prelude {
     use super::*;
     pub use app::App;
     pub use client::Client;
-    pub use next_rs_traits::predule::*;
     pub use server::{Response, Server};
+    pub use stonkks_traits::predule::*;
 }
 
 // TODO:

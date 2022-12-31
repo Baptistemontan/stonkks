@@ -1,5 +1,5 @@
-use next_rs::prelude::*;
 use serde::{Deserialize, Serialize};
+use stonkks::prelude::*;
 use sycamore::prelude::*;
 
 pub struct Counter;
