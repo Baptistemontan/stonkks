@@ -9,12 +9,8 @@ use super::routes::DynRoutable;
 
 /// For now api routes just respond with a string,
 /// this will change just need to figure out the api.
-/// Also need a way for ressources,
-/// they could be store in a HashMap<TypeId, Box<dyn Any>>,
-/// but I will take care of that later.
 /// TODO:
 ///  - support for method type (GET, POST, ect..) (only support get rn)
-///  - ressources
 ///  - better return type
 ///  - ??
 #[async_trait::async_trait]
