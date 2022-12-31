@@ -2,6 +2,7 @@ use next_rs_traits::api::DynApi;
 use next_rs_traits::pointers::*;
 use next_rs_traits::predule::*;
 use next_rs_traits::ressources::RessourceMap;
+use next_rs_traits::routes::UrlInfos;
 
 #[derive(Default)]
 pub struct ApiRoutes(Vec<Box<dyn DynApi>>);
@@ -23,9 +24,9 @@ impl ApiRoutes {
         self.0.push(route);
     }
 
-    pub fn find_api<'url>(
+    pub fn find_api<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
     ) -> Option<(&'_ dyn DynApi, RouteUntypedPtr<'url>)> {
         for api in &self.0 {
             if let Some(route) = api.try_match_route(url_infos) {
@@ -35,9 +36,9 @@ impl ApiRoutes {
         None
     }
 
-    pub async fn find_and_respond<'url>(
+    pub async fn find_and_respond<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
         ressources: &RessourceMap,
     ) -> Option<Result<String, String>> {
         let (api, route) = self.find_api(url_infos)?;

@@ -1,6 +1,7 @@
 use super::prelude::*;
 use next_rs_traits::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
 use next_rs_traits::pointers::*;
+use next_rs_traits::routes::UrlInfos;
 
 type BoxedDynPage = Box<dyn DynPageDyn>;
 type BoxedStaticPage = Box<dyn DynStaticPage>;
@@ -9,9 +10,9 @@ type BoxedStaticPage = Box<dyn DynStaticPage>;
 pub struct DynPages(Vec<BoxedDynPage>);
 
 impl DynPages {
-    pub fn find_dyn_page_and_route<'url>(
+    pub fn find_dyn_page_and_route<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
     ) -> Option<(&'_ dyn DynPageDyn, RouteUntypedPtr<'url>)> {
         for page in &self.0 {
             if let Some(route) = page.try_match_route(url_infos) {
@@ -20,9 +21,9 @@ impl DynPages {
         }
         None
     }
-    pub async fn find_dyn_page_and_props<'url>(
+    pub async fn find_dyn_page_and_props<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<(&'_ dyn DynPageDyn, PropsUntypedPtr), String>> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
         let props_result = unsafe { page.get_server_props(route).await };
@@ -53,9 +54,9 @@ impl DynPages {
 pub struct StaticPages(Vec<BoxedStaticPage>);
 
 impl StaticPages {
-    pub fn find_static_page<'url>(
+    pub fn find_static_page<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
     ) -> Option<&'_ dyn DynStaticPage> {
         for page in &self.0 {
             if let Some(_) = page.try_match_route(url_infos) {

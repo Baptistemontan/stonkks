@@ -11,10 +11,10 @@ impl Routable for Hello {
 }
 
 impl<'a> Route<'a> for HelloRoute<'a> {
-    fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
-        let mut iter = url.segments().iter().skip(1);
+    fn try_from_url(url: UrlInfos<'_, 'a>) -> Option<Self> {
+        let mut iter = url.segments().iter().cloned();
         match (iter.next(), iter.next()) {
-            (Some(route), Some(name)) if route == &"hello" => Some(HelloRoute(name)),
+            (Some(route), Some(name)) if route == "hello" => Some(HelloRoute(name)),
             _ => None,
         }
     }

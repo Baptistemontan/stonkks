@@ -34,9 +34,12 @@ pub trait Component: Send + Sync + 'static {
 pub struct NotFoundPageProps;
 
 impl NotFoundPageProps {
-    pub fn new_untyped() -> PropsUntypedPtr {
-        let props = Self::new();
-        PropsUntypedPtr::new_not_found_props(props)
+    pub fn to_untyped(self) -> PropsUntypedPtr {
+        PropsUntypedPtr::new_not_found_props(self)
+    }
+
+    pub fn serialize(&self) -> Result<String, Error> {
+        serde_json::to_string(self)
     }
 
     pub fn new() -> Self {

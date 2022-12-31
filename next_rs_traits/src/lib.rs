@@ -15,5 +15,5 @@ pub mod predule {
     };
     pub use props::{IntoProps, Props, ReactiveProps};
     pub use ressources::{MultiRessourcesExtractor, RessourceExtractor};
-    pub use routes::{Routable, Route, UrlInfos};
+    pub use routes::{OwnedUrlInfos, Routable, Route, UrlInfos};
 }

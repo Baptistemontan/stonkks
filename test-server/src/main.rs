@@ -21,10 +21,10 @@ use rocket::catcher::Result as CatcherResult;
 
 use rocket::request::Request;
 
-struct Uri<'a>(pub UrlInfos<'a>);
+struct Uri<'a>(pub OwnedUrlInfos<'a>);
 
 impl<'a> Deref for Uri<'a> {
-    type Target = UrlInfos<'a>;
+    type Target = OwnedUrlInfos<'a>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -34,7 +34,7 @@ impl<'a> Deref for Uri<'a> {
 impl<'a> Uri<'a> {
     pub fn from_request(request: &'a Request<'_>) -> Self {
         let url = request.uri().path().as_str();
-        let url_infos = UrlInfos::parse_from_url(url);
+        let url_infos = OwnedUrlInfos::parse_from_url(url);
         Self(url_infos)
     }
 }
@@ -69,6 +69,13 @@ impl Handler for MyServer {
             Some(Err(err)) => {
                 error_!("An error occured at {} : {}", url.url(), err);
                 Outcome::Failure(Status::InternalServerError)
+            }
+            Some(Ok(NextResponse::Props(props))) => {
+                let response = (ContentType::JSON, props).respond_to(request);
+                match response {
+                    Ok(rep) => Outcome::Success(rep),
+                    Err(status) => Outcome::Failure(status),
+                }
             }
             None => Outcome::Forward(data),
         }

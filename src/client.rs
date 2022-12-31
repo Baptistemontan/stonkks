@@ -9,6 +9,7 @@ use js_sys::{JsString, Object};
 use next_rs_traits::layout::DynLayout;
 use next_rs_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
 use next_rs_traits::pointers::*;
+use next_rs_traits::routes::UrlInfos;
 use serde_json::Error;
 use wasm_bindgen::{throw_str, JsValue};
 use web_sys::{Element, Window};
@@ -67,9 +68,9 @@ impl Client {
         self.inner.layout()
     }
 
-    fn find_any_page<'url, 'a, I: IntoIterator<Item = &'a dyn DynBasePage>>(
+    fn find_any_page<'inf, 'url, 'a, I: IntoIterator<Item = &'a dyn DynBasePage>>(
         pages: I,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'inf, 'url>,
     ) -> Option<&'a dyn DynComponent> {
         pages.into_iter().find_map(|page| {
             page.try_match_route(url_infos)
@@ -77,16 +78,16 @@ impl Client {
         })
     }
 
-    fn find_page<'url>(&self, url_infos: &UrlInfos<'url>) -> &'_ dyn DynComponent {
+    fn find_page<'a, 'url>(&self, url_infos: UrlInfos<'a, 'url>) -> &'_ dyn DynComponent {
         let static_pages = self.static_pages().iter_as_base_page();
         let dyn_pages = self.dyn_pages().iter_as_base_page();
         let iter_pages = static_pages.chain(dyn_pages);
         Self::find_any_page(iter_pages, url_infos).unwrap_or(self.not_found_page())
     }
 
-    fn find_page_and_props<'url>(
+    fn find_page_and_props<'a, 'url>(
         &self,
-        url_infos: &UrlInfos<'url>,
+        url_infos: UrlInfos<'a, 'url>,
         serialized_props: &str,
     ) -> Result<(&'_ dyn DynComponent, PropsUntypedPtr), Error> {
         let page = self.find_page(url_infos);
@@ -99,9 +100,10 @@ impl Client {
         url: &'url str,
         serialized_props: &str,
     ) -> (&dyn DynComponent, PropsUntypedPtr, Element) {
-        let url_infos = UrlInfos::parse_from_url(url);
+        let url_infos = OwnedUrlInfos::parse_from_url(url);
+        let url_infos = url_infos.to_shared();
         let (page, props) = self
-            .find_page_and_props(&url_infos, serialized_props)
+            .find_page_and_props(url_infos, serialized_props)
             .expect("Error appened deserializing the props");
 
         let root = web_sys::window()

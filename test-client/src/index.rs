@@ -32,7 +32,7 @@ impl Component for Index {
 pub struct IndexRoute;
 
 impl<'a> Route<'a> for IndexRoute {
-    fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
+    fn try_from_url(url: UrlInfos<'_, 'a>) -> Option<Self> {
         url.segments().is_empty().then_some(IndexRoute)
     }
 }

@@ -58,8 +58,8 @@ impl Component for Counter {
 
 pub struct CounterRoute(i32);
 
-impl<'a> Route<'a> for CounterRoute {
-    fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
+impl<'url> Route<'url> for CounterRoute {
+    fn try_from_url(url: UrlInfos<'_, 'url>) -> Option<Self> {
         let mut segments = url.segments().into_iter().copied();
         if segments.next()? != "counter" {
             return None;

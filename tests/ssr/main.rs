@@ -28,11 +28,11 @@ struct MyDynPage;
 struct MyRoute<'a>(&'a str);
 
 impl<'a> Route<'a> for MyRoute<'a> {
-    fn try_from_url(url: &UrlInfos<'a>) -> Option<Self> {
-        let mut iter = url.segments().iter();
+    fn try_from_url(url: UrlInfos<'_, 'a>) -> Option<Self> {
+        let mut iter = url.segments().iter().cloned();
 
         match (iter.next(), iter.next(), iter.next()) {
-            (Some(value), Some(greeting), None) if value == &"index" => Some(MyRoute(greeting)),
+            (Some(value), Some(greeting), None) if value == "index" => Some(MyRoute(greeting)),
             _ => None,
         }
     }
@@ -104,12 +104,12 @@ async fn test_dyn_page() {
 
     let app = App::new().dyn_page(MyDynPage);
 
-    let url_infos = UrlInfos::parse_from_url(&url);
+    let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
     let server = app.into_server();
 
     let rendered_html = server
-        .try_render_to_string(&url_infos)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
@@ -121,12 +121,12 @@ async fn test_dyn_page() {
 fn test_routing() {
     let page = MyDynPage;
     let dyn_page: Box<dyn DynBasePage> = Box::new(page);
-    let url_infos = UrlInfos::parse_from_url("/about");
-    assert!(dyn_page.try_match_route(&url_infos).is_none());
-    let url_infos = UrlInfos::parse_from_url("/index/other");
-    assert!(dyn_page.try_match_route(&url_infos).is_some());
-    let url_infos = UrlInfos::parse_from_url("/index");
-    assert!(dyn_page.try_match_route(&url_infos).is_none());
+    let url_infos = OwnedUrlInfos::parse_from_url("/about");
+    assert!(dyn_page.try_match_route(url_infos.to_shared()).is_none());
+    let url_infos = OwnedUrlInfos::parse_from_url("/index/other");
+    assert!(dyn_page.try_match_route(url_infos.to_shared()).is_some());
+    let url_infos = OwnedUrlInfos::parse_from_url("/index");
+    assert!(dyn_page.try_match_route(url_infos.to_shared()).is_none());
 
     let props: &str = "Greetings!";
 
@@ -152,10 +152,10 @@ async fn test_layout() {
 
     let server = app.into_server();
 
-    let url_infos = UrlInfos::parse_from_url(&url);
+    let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
     let rendered_html = server
-        .try_render_to_string(&url_infos)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
@@ -173,11 +173,14 @@ async fn test_default_not_found() {
     let app = App::new().dyn_page(MyDynPage).with_layout(MyLayout);
     let server = app.into_server();
 
-    let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
+    let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    assert!(server.try_render_to_string(&url_infos).await.is_none());
+    assert!(server
+        .try_render_to_string(url_infos.to_shared())
+        .await
+        .is_none());
 
-    let rendered_html = server.render_not_found();
+    let rendered_html = server.render_not_found().unwrap();
 
     println!("{}", rendered_html);
 
@@ -193,11 +196,14 @@ async fn test_custom_not_found() {
 
     let server = app.into_server();
 
-    let url_infos = UrlInfos::parse_from_url("absolutely_not_index");
+    let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    assert!(server.try_render_to_string(&url_infos).await.is_none());
+    assert!(server
+        .try_render_to_string(url_infos.to_shared())
+        .await
+        .is_none());
 
-    let rendered_html = server.render_not_found();
+    let rendered_html = server.render_not_found().unwrap();
 
     println!("{}", rendered_html);
 
@@ -211,12 +217,12 @@ async fn test_dyn_page_total_render() {
 
     let app = App::new().dyn_page(MyDynPage);
 
-    let url_infos = UrlInfos::parse_from_url(&url);
+    let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
     let server = app.into_server();
 
     let rendered_html = server
-        .try_render_to_string(&url_infos)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
