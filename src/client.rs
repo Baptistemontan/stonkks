@@ -181,8 +181,8 @@ impl Client {
         log("props: ");
         log(&serialized_props);
         log("start hydrate.");
-        // self.hydrate(&url, &serialized_props);
-        self.render(&url, &serialized_props);
+        self.hydrate(&url, &serialized_props);
+        // self.render(&url, &serialized_props);
         log("hydrate finished.");
         Ok(())
     }
