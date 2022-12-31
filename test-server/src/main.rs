@@ -94,7 +94,7 @@ impl rocket::catcher::Handler for NotFound {
 
 #[launch]
 fn rocket() -> _ {
-    let ressource = MyRessource("test_ressource".into());
+    let ressource = MyRessource(0.into());
     let app = get_app()
         .ressource_unwrap(ressource)
         .api(Hello)

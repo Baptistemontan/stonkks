@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicUsize;
+
 use next_rs::prelude::*;
 
 pub struct Hello;
@@ -19,7 +21,7 @@ impl<'a> Route<'a> for HelloRoute<'a> {
 }
 
 #[derive(Debug)]
-pub struct MyRessource(pub String);
+pub struct MyRessource(pub AtomicUsize);
 
 #[async_trait::async_trait]
 impl Api for Hello {
@@ -27,9 +29,10 @@ impl Api for Hello {
     type Ressource = RessourceExtractor<MyRessource>;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        ressource: &'r MyRessource,
+        MyRessource(counter): &'r MyRessource,
     ) -> Result<String, &'url str> {
-        Ok(format!("name: {}, ressource: {}", route.0, ressource.0))
+        let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Ok(format!("{{\"name\":\"{}\",\"count\":\"{}\"}}", route.0, count))
         // Err(route.0)
     }
 }
