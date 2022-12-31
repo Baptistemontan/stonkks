@@ -83,12 +83,12 @@ impl App {
         self
     }
 
-    pub fn ressource<T: Any + Send + Sync>(mut self, ressource: T) -> Result<Self, T> {
-        if let Some(old_value) = self.ressources.add_ressource(ressource) {
-            Err(*old_value.downcast::<T>().unwrap())
-        } else {
-            Ok(self)
-        }
+    pub fn ressource<T: Any + Send + Sync>(mut self, ressource: T) -> (Self, Option<T>) {
+        let old = self
+            .ressources
+            .add_ressource(ressource)
+            .map(|old| *old.downcast::<T>().unwrap());
+        (self, old)
     }
 
     pub fn ressource_unwrap<T: Any + Send + Sync>(mut self, ressource: T) -> Self {
