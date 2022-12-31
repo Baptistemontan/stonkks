@@ -103,7 +103,7 @@ fn rocket() -> _ {
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
     let not_found = NotFound(app);
-    let not_found_catcher = Catcher::new::<u16, NotFound>(404, not_found);
+    let not_found_catcher = Catcher::new(404, not_found);
     rocket::build()
         .mount("/public", FileServer::from(relative!("static")))
         .mount("/", server)
