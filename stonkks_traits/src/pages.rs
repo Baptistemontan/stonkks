@@ -3,6 +3,8 @@ use std::fmt::Debug;
 use async_trait::async_trait;
 use sycamore::prelude::*;
 
+use crate::ressources::ExtractRessources;
+use crate::ressources::RessourceMap;
 use crate::routes::DynRoutable;
 
 use super::pointers::*;
@@ -144,11 +146,16 @@ impl<T: Page> DynBasePage for T {
     }
 }
 
+pub type PropsExtractedRessource<'a, T> =
+    <<T as DynPage>::Ressource as ExtractRessources>::Output<'a>;
+
 #[async_trait]
 pub trait DynPage: Page + Sync {
     type Err<'url>: Debug;
-    async fn get_server_props<'url>(
+    type Ressource: ExtractRessources;
+    async fn get_server_props<'url, 'r>(
         route: Self::Route<'url>,
+        ressources: PropsExtractedRessource<'r, Self>,
     ) -> Result<Self::Props, Self::Err<'url>>;
 }
 
@@ -157,6 +164,7 @@ pub trait DynPageDyn: DynBasePage {
     async unsafe fn get_server_props<'url>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
+        ressources: &RessourceMap,
     ) -> Result<PropsUntypedPtr, String>;
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
@@ -166,9 +174,13 @@ impl<T: DynPage> DynPageDyn for T {
     async unsafe fn get_server_props<'url>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
+        ressources: &RessourceMap,
     ) -> Result<PropsUntypedPtr, String> {
         let route = route_ptr.cast::<T>();
-        let props_result = <T as DynPage>::get_server_props(*route).await;
+        let ressource = ressources
+            .extract::<T::Ressource>()
+            .map_err(|err| format!("Missing ressource {}.", err))?;
+        let props_result = <T as DynPage>::get_server_props(*route, ressource).await;
         match props_result {
             Ok(props) => Ok(PropsUntypedPtr::new::<T>(props)),
             Err(err) => Err(format!("{:?}", err)),

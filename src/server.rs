@@ -50,11 +50,16 @@ impl Server {
     pub async fn try_find_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
+        ressources: &RessourceMap,
     ) -> Option<Result<(&'_ dyn DynComponent, PropsUntypedPtr), String>> {
         if let Some(page) = self.static_pages().find_static_page(url_infos) {
             return Some(Ok((page.as_dyn_component(), PropsUntypedPtr::new_unit())));
         }
-        if let Some(result) = self.dyn_pages().find_dyn_page_and_props(url_infos).await {
+        if let Some(result) = self
+            .dyn_pages()
+            .find_dyn_page_and_props(url_infos, ressources)
+            .await
+        {
             return match result {
                 Ok((page, props)) => Some(Ok((page.as_dyn_component(), props))),
                 Err(err) => Some(Err(err)),
@@ -66,8 +71,9 @@ impl Server {
     pub async fn try_render_to_string<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
+        ressources: &RessourceMap,
     ) -> Option<Result<String, String>> {
-        let result = self.try_find_page_and_props(url_infos).await?;
+        let result = self.try_find_page_and_props(url_infos, ressources).await?;
         let (page, props) = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
@@ -124,7 +130,7 @@ impl Server {
             }
             _ => {
                 // possible page
-                self.try_render_to_string(url_infos.to_shared())
+                self.try_render_to_string(url_infos.to_shared(), &self.ressources)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Html))

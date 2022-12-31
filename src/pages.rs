@@ -1,6 +1,7 @@
 use super::prelude::*;
 use stonkks_traits::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
 use stonkks_traits::pointers::*;
+use stonkks_traits::ressources::RessourceMap;
 use stonkks_traits::routes::UrlInfos;
 
 type BoxedDynPage = Box<dyn DynPageDyn>;
@@ -24,9 +25,10 @@ impl DynPages {
     pub async fn find_dyn_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
+        ressources: &RessourceMap,
     ) -> Option<Result<(&'_ dyn DynPageDyn, PropsUntypedPtr), String>> {
         let (page, route) = self.find_dyn_page_and_route(url_infos)?;
-        let props_result = unsafe { page.get_server_props(route).await };
+        let props_result = unsafe { page.get_server_props(route, ressources).await };
         Some(props_result.map(|props| (page, props)))
     }
 

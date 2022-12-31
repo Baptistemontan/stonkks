@@ -99,9 +99,13 @@ impl rocket::catcher::Handler for NotFound {
             Ok(html) => html,
             Err(err) => {
                 let uri = Uri::from_request(request);
-                error_!("An error occured at {} while rendering the 404 page: {}", uri.url(), err);
+                error_!(
+                    "An error occured at {} while rendering the 404 page: {}",
+                    uri.url(),
+                    err
+                );
                 return Err(Status::InternalServerError);
-            } 
+            }
         };
         (Status::NotFound, (ContentType::HTML, html)).respond_to(request)
     }

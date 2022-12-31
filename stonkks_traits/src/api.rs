@@ -19,11 +19,11 @@ pub trait Api: Routable {
     type Ressource: ExtractRessources;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        ressources: ExtractedRessource<'r, Self>,
+        ressources: ApiExtractedRessource<'r, Self>,
     ) -> Result<String, Self::Err<'url>>;
 }
 
-pub type ExtractedRessource<'a, T> = <<T as Api>::Ressource as ExtractRessources>::Output<'a>;
+pub type ApiExtractedRessource<'a, T> = <<T as Api>::Ressource as ExtractRessources>::Output<'a>;
 
 #[async_trait::async_trait]
 pub trait DynApi: DynRoutable {
@@ -42,11 +42,9 @@ impl<T: Api> DynApi for T {
         ressources: &RessourceMap,
     ) -> Result<String, String> {
         let route = route_ptr.cast::<T>();
-        let ressource = ressources.extract::<T::Ressource>();
-        let ressource = match ressource {
-            Ok(ressource) => ressource,
-            Err(missing_ressource_name) => panic!("Missing ressource {}.", missing_ressource_name),
-        };
+        let ressource = ressources
+            .extract::<T::Ressource>()
+            .map_err(|err| format!("Missing ressource {}.", err))?;
         <T as Api>::respond(*route, ressource)
             .await
             .map_err(|err| format!("{:?}", err))

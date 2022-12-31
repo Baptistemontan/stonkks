@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use stonkks::prelude::*;
 use stonkks_traits::pages::DynBasePage;
 use stonkks_traits::pointers::*;
+use stonkks_traits::ressources::RessourceMap;
 use sycamore::prelude::*;
 
 struct MyLayout;
@@ -77,8 +78,11 @@ impl Routable for MyDynPage {
 #[async_trait]
 impl DynPage for MyDynPage {
     type Err<'url> = ();
-
-    async fn get_server_props<'url>(route: Self::Route<'url>) -> Result<Self::Props, ()> {
+    type Ressource = ();
+    async fn get_server_props<'url, 'r>(
+        route: Self::Route<'url>,
+        _ressource: (),
+    ) -> Result<Self::Props, ()> {
         Ok(MyProps(route.0.to_string()))
     }
 }
@@ -108,8 +112,10 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
+    let ressources = RessourceMap::default();
+
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared())
+        .try_render_to_string(url_infos.to_shared(), &ressources)
         .await
         .unwrap()
         .unwrap();
@@ -154,8 +160,10 @@ async fn test_layout() {
 
     let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
+    let ressources = RessourceMap::default();
+
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared())
+        .try_render_to_string(url_infos.to_shared(), &ressources)
         .await
         .unwrap()
         .unwrap();
@@ -175,8 +183,10 @@ async fn test_default_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
+    let ressources = RessourceMap::default();
+
     assert!(server
-        .try_render_to_string(url_infos.to_shared())
+        .try_render_to_string(url_infos.to_shared(), &ressources)
         .await
         .is_none());
 
@@ -198,8 +208,10 @@ async fn test_custom_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
+    let ressources = RessourceMap::default();
+
     assert!(server
-        .try_render_to_string(url_infos.to_shared())
+        .try_render_to_string(url_infos.to_shared(), &ressources)
         .await
         .is_none());
 
@@ -221,8 +233,10 @@ async fn test_dyn_page_total_render() {
 
     let server = app.into_server();
 
+    let ressources = RessourceMap::default();
+
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared())
+        .try_render_to_string(url_infos.to_shared(), &ressources)
         .await
         .unwrap()
         .unwrap();
