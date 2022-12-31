@@ -60,14 +60,10 @@ pub struct CounterRoute(i32);
 
 impl<'url> Route<'url> for CounterRoute {
     fn try_from_url(url: UrlInfos<'_, 'url>) -> Option<Self> {
-        let mut segments = url.segments().into_iter().copied();
-        if segments.next()? != "counter" {
-            return None;
-        }
-        match (segments.next(), segments.next()) {
-            (Some(second), None) => Some(CounterRoute(second.parse().ok()?)),
-            (None, None) => Some(CounterRoute(0)),
-            _ => None,
+        match url.segments() {
+            ["counter"] => Some(CounterRoute(0)),
+            ["counter", count] => Some(CounterRoute(count.parse().ok()?)),
+            _ => None
         }
     }
 }
