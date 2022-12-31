@@ -15,6 +15,8 @@ use rocket::{
 };
 use test_client::get_app;
 
+use rocket::log::error_;
+
 use rocket::catcher::Result as CatcherResult;
 
 use rocket::request::Request;
@@ -65,7 +67,7 @@ impl Handler for MyServer {
                 }
             }
             Some(Err(err)) => {
-                eprintln!("An error occured at {} :\n{}", url.url(), err);
+                error_!("An error occured at {} : {}", url.url(), err);
                 Outcome::Failure(Status::InternalServerError)
             }
             None => Outcome::Forward(data),
