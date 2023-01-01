@@ -35,6 +35,20 @@ pub trait ExtractRessources {
     fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str>;
 }
 
+pub struct Ressource<T>(pub T);
+
+pub trait AnyRessource: Any + Send + Sync {}
+
+impl<T: Send + Sync + Any> AnyRessource for T {}
+
+impl<T: ExtractRessources> ExtractRessources for Ressource<T> {
+    type Output<'a> = Ressource<<T as ExtractRessources>::Output<'a>>;
+
+    fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+        T::extract(ressources).map(Ressource)
+    }
+}
+
 impl ExtractRessources for () {
     type Output<'a> = ();
 
@@ -43,27 +57,41 @@ impl ExtractRessources for () {
     }
 }
 
-pub struct RessourceExtractor<T: AnyRessource>(pub T);
-
-pub trait AnyRessource: Any + Send + Sync {}
-
-impl<T: Send + Sync + Any> AnyRessource for T {}
-
-impl<T: AnyRessource> ExtractRessources for RessourceExtractor<T> {
+impl<T: AnyRessource> ExtractRessources for (T,) {
     type Output<'a> = &'a T;
+
     fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
         ressources.get_ressource::<T>()
     }
 }
 
-pub struct MultiRessourcesExtractor<T>(pub T);
+mod impl_macro {
+    use super::*;
 
-impl<T: AnyRessource, U: AnyRessource> ExtractRessources for MultiRessourcesExtractor<(T, U)> {
-    type Output<'a> = (&'a T, &'a U);
-
-    fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
-        let a = ressources.get_ressource::<T>()?;
-        let b = ressources.get_ressource::<U>()?;
-        Ok((a, b))
+    // macro shamefully stolen from the std,
+    // originaly meant from implementing PartialEq and other trait for tuples
+    // just modified to implement this.
+    macro_rules! tuple_impls {
+        // Stopping criteria (1-ary tuple)
+        // (T, ) is implemented differently (return T instead of (T, ))
+        ($T:ident) => {
+            // tuple_impls!(@impl $T);
+        };
+        // Running criteria (n-ary tuple, with n >= 2)
+        ($T:ident $( $U:ident )+) => {
+            tuple_impls!($( $U )+);
+            tuple_impls!(@impl $T $( $U )+);
+        };
+        // "Private" internal implementation
+        (@impl $( $T:ident )+) => {
+            impl<$($T:AnyRessource),+> ExtractRessources for ($($T,)+) {
+                type Output<'a> = ($(&'a $T,)+);
+                fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+                    Ok(($(ressources.get_ressource::<$T>()?,)+))
+                }
+            }
+        }
     }
+
+    tuple_impls!(A B C D E F G H I J K L M O P Q); // 16 Max
 }

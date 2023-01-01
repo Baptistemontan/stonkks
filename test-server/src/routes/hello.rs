@@ -26,10 +26,10 @@ pub struct MyRessource(pub AtomicUsize);
 #[async_trait::async_trait]
 impl Api for Hello {
     type Err<'a> = &'a str;
-    type Ressource = RessourceExtractor<MyRessource>;
+    type Ressource = Ressource<(MyRessource,)>;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        MyRessource(counter): &'r MyRessource,
+        Ressource(MyRessource(counter)): Ressource<&'r MyRessource>,
     ) -> Result<String, &'url str> {
         let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         Ok(format!(

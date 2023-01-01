@@ -14,6 +14,6 @@ pub mod predule {
         Component, ComponentReactiveProps, DynPage, NotFoundPage, NotFoundPageProps, Page,
     };
     pub use props::{IntoProps, Props, ReactiveProps};
-    pub use ressources::{MultiRessourcesExtractor, RessourceExtractor};
+    pub use ressources::Ressource;
     pub use routes::{OwnedUrlInfos, Routable, Route, UrlInfos};
 }
