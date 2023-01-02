@@ -1211,7 +1211,7 @@ dependencies = [
  "serde",
  "serde_json",
  "stonkks-core",
- "stonkks_macro",
+ "stonkks-macro",
  "sycamore",
  "tokio",
  "wasm-bindgen",
@@ -1229,7 +1229,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "stonkks_macro"
+name = "stonkks-macro"
 version = "0.1.0"
 dependencies = [
  "nom",
