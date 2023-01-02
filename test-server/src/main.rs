@@ -1,5 +1,7 @@
 mod routes;
-use routes::hello::{Hello, MyCounter};
+mod states;
+use routes::counter::CountApi;
+use states::counter::CounterState;
 
 use std::{ops::Deref, sync::Arc};
 
@@ -113,8 +115,8 @@ impl rocket::catcher::Handler for NotFound {
 
 #[launch]
 fn rocket() -> _ {
-    let state = MyCounter(0.into());
-    let app = get_app().state_unwrap(state).api(Hello).into_server();
+    let state = CounterState::default();
+    let app = get_app().state_unwrap(state).api(CountApi).into_server();
 
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
