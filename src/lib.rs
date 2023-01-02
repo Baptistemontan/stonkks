@@ -9,7 +9,7 @@ pub mod prelude {
     use super::*;
     pub use app::App;
     pub use client::Client;
-    pub use server::{Response, Server};
+    pub use server::{Server, ServerResponse};
     pub use stonkks_core::predule::*;
 }
 

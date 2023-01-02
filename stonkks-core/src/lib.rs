@@ -3,6 +3,7 @@ pub mod layout;
 pub mod pages;
 pub mod pointers;
 pub mod props;
+pub mod response;
 pub mod routes;
 pub mod states;
 
@@ -14,6 +15,7 @@ pub mod predule {
         Component, ComponentReactiveProps, DynPage, NotFoundPage, NotFoundPageProps, Page,
     };
     pub use props::{IntoProps, Props, ReactiveProps};
+    pub use response::{ContentType, IntoResponse, Json, Response};
     pub use routes::{OwnedUrlInfos, Routable, Route, UrlInfos};
     pub use states::State;
 }

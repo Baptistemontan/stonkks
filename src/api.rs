@@ -1,6 +1,7 @@
 use stonkks_core::api::DynApi;
 use stonkks_core::pointers::*;
 use stonkks_core::predule::*;
+use stonkks_core::response::Response;
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
 
@@ -40,7 +41,7 @@ impl ApiRoutes {
         &self,
         url_infos: UrlInfos<'a, 'url>,
         states: &StatesMap,
-    ) -> Option<Result<String, String>> {
+    ) -> Option<Result<Response, String>> {
         let (api, route) = self.find_api(url_infos)?;
         let response = unsafe { api.respond(route, states).await };
         Some(response)

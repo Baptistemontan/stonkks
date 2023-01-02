@@ -7,14 +7,14 @@ use std::{ops::Deref, sync::Arc};
 
 use rocket::{
     fs::{relative, FileServer},
-    http::{ContentType, Method, Status},
+    http::{ContentType as RocketContentType, Method, Status},
     launch,
     outcome::Outcome,
     response::Responder,
     route::Handler,
     Catcher, Data, Response, Route as RocketRoute,
 };
-use stonkks::prelude::{Response as StonkksResponse, *};
+use stonkks::prelude::{ServerResponse as StonkksResponse, *};
 use test_client::get_app;
 
 use rocket::log::error_;
@@ -41,6 +41,13 @@ impl<'a> Uri<'a> {
     }
 }
 
+fn convert_content_type(content_type: ContentType) -> RocketContentType {
+    match content_type {
+        ContentType::Text => RocketContentType::Text,
+        ContentType::Json => RocketContentType::JSON,
+    }
+}
+
 #[derive(Clone)]
 struct MyServer(Arc<Server>);
 
@@ -55,14 +62,16 @@ impl Handler for MyServer {
         let result = self.0.respond(&url).await;
         match result {
             Some(Ok(StonkksResponse::Html(html))) => {
-                let response = (ContentType::HTML, html).respond_to(request);
+                let response = (RocketContentType::HTML, html).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
             }
             Some(Ok(StonkksResponse::Api(api_response))) => {
-                let response = (ContentType::JSON, api_response).respond_to(request);
+                let content_type = convert_content_type(api_response.content_type);
+                let content = api_response.content;
+                let response = (content_type, content).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
@@ -73,7 +82,7 @@ impl Handler for MyServer {
                 Outcome::Failure(Status::InternalServerError)
             }
             Some(Ok(StonkksResponse::Props(props))) => {
-                let response = (ContentType::JSON, props).respond_to(request);
+                let response = (RocketContentType::JSON, props).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
@@ -109,7 +118,7 @@ impl rocket::catcher::Handler for NotFound {
                 return Err(Status::InternalServerError);
             }
         };
-        (Status::NotFound, (ContentType::HTML, html)).respond_to(request)
+        (Status::NotFound, (RocketContentType::HTML, html)).respond_to(request)
     }
 }
 

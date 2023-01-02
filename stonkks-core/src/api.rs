@@ -1,5 +1,7 @@
 use crate::pointers::*;
 use crate::predule::*;
+use crate::response::IntoResponse;
+use crate::response::Response;
 use crate::routes::DynRoutable;
 use crate::states::ExtractState;
 use crate::states::StatesMap;
@@ -19,12 +21,13 @@ pub trait Api: Routable {
     type Err<'url>: Debug;
     /// Extractor used to access states of the server.
     type State<'r>: ExtractState<'r>;
+    type Output<'url>: IntoResponse;
 
     /// Function executed when the supplied route match the targeted URL.
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
         state: Self::State<'r>,
-    ) -> Result<String, Self::Err<'url>>;
+    ) -> Result<Self::Output<'url>, Self::Err<'url>>;
 }
 
 /// Internal trait used to implement the `Api` trait in a dynamic dispatch way.
@@ -40,7 +43,7 @@ pub unsafe trait DynApi: DynRoutable {
         &self,
         route_ptr: RouteUntypedPtr<'url>,
         state: &'r StatesMap,
-    ) -> Result<String, String>;
+    ) -> Result<Response, String>;
 }
 
 #[async_trait::async_trait]
@@ -49,7 +52,7 @@ unsafe impl<T: Api> DynApi for T {
         &self,
         route_ptr: RouteUntypedPtr<'url>,
         state: &'r StatesMap,
-    ) -> Result<String, String> {
+    ) -> Result<Response, String> {
         // trust the caller to pass down a route_ptr of the valid type.
         let route = route_ptr.downcast::<T>();
         // extract requested states.
@@ -61,6 +64,10 @@ unsafe impl<T: Api> DynApi for T {
         <T as Api>::respond(*route, state)
             .await
             // if failed return the erreur in a Debug formatted string.
+            .map_err(|err| format!("{:?}", err))?
+            // turn it into a response
+            .into_response()
+            // return the error in a debug formatted way
             .map_err(|err| format!("{:?}", err))
     }
 }

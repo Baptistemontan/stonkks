@@ -1,3 +1,4 @@
+use serde::Serialize;
 use stonkks::prelude::*;
 
 use crate::states::counter::CounterState;
@@ -22,20 +23,28 @@ impl<'a> Route<'a> for CountRoute<'a> {
     }
 }
 
+#[derive(Serialize)]
+pub struct CounterResponse<'a> {
+    name: &'a str,
+    count: usize,
+}
+
 #[async_trait::async_trait]
 impl Api for CountApi {
     type Err<'a> = &'a str;
     type State<'r> = State<&'r CounterState>;
+    type Output<'url> = Json<CounterResponse<'url>>;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
         counter: State<&'r CounterState>,
-    ) -> Result<String, &'url str> {
+    ) -> Result<Self::Output<'url>, Self::Err<'url>> {
         let CountRoute { name } = route;
         if name == "world" {
             return Err(name);
         }
 
         let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        Ok(format!("{{\"name\":\"{}\",\"count\":\"{}\"}}", name, count))
+        let response = Json(CounterResponse { count, name });
+        Ok(response)
     }
 }

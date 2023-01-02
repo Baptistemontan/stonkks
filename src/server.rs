@@ -7,6 +7,7 @@ use super::prelude::*;
 use stonkks_core::layout::DynLayout;
 use stonkks_core::pages::{DynComponent, DynRenderResult};
 use stonkks_core::pointers::*;
+use stonkks_core::response::Response;
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
 
@@ -16,10 +17,10 @@ pub struct Server {
     api: ApiRoutes,
 }
 
-pub enum Response {
+pub enum ServerResponse {
     Props(String),
     Html(String),
-    Api(String),
+    Api(Response),
 }
 
 impl Server {
@@ -111,7 +112,7 @@ impl Server {
     pub async fn respond<'url>(
         &self,
         url_infos: &OwnedUrlInfos<'url>,
-    ) -> Option<Result<Response, String>> {
+    ) -> Option<Result<ServerResponse, String>> {
         match url_infos.to_shared_shifted() {
             Some(("props", _)) => None,  // props API
             Some(("public", _)) => None, // static file
@@ -121,7 +122,7 @@ impl Server {
                     .find_and_respond(url_infos, &self.states)
                     .await
                     .transpose()
-                    .map(|html| html.map(Response::Api))
+                    .map(|html| html.map(ServerResponse::Api))
                     .transpose()
             }
             _ => {
@@ -129,7 +130,7 @@ impl Server {
                 self.try_render_to_string(url_infos.to_shared(), &self.states)
                     .await
                     .transpose()
-                    .map(|html| html.map(Response::Html))
+                    .map(|html| html.map(ServerResponse::Html))
                     .transpose()
             }
         }
