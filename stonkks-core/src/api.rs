@@ -1,50 +1,69 @@
-use std::fmt::Debug;
-
-use crate::states::ExtractState;
-use crate::states::StatesMap;
-
-use super::pointers::*;
-use super::predule::*;
-use super::routes::DynRoutable;
-
 /// For now api routes just respond with a string,
 /// this will change just need to figure out the api.
 /// TODO:
 ///  - support for method type (GET, POST, ect..) (only support get rn)
 ///  - better return type
 ///  - ??
+
+use std::fmt::Debug;
+use crate::states::ExtractState;
+use crate::states::StatesMap;
+use crate::pointers::*;
+use crate::predule::*;
+use crate::routes::DynRoutable;
+
+
+
+/// Trait use to create an API route.
 #[async_trait::async_trait]
 pub trait Api: Routable {
+    /// Error returned by the `respond` function.
+    /// Must implement `Debug`.
     type Err<'url>: Debug;
+    /// Extractor used to access states of the server.
     type State<'r>: ExtractState<'r>;
+
+    /// Function executed when the supplied route match the targeted URL.
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        states: Self::State<'r>,
+        state: Self::State<'r>,
     ) -> Result<String, Self::Err<'url>>;
 }
 
+/// Internal trait used to implement the `Api` trait in a dynamic dispatch way.
+/// This trait is NOT meant to be implemented by hand, 
+/// it is automaticaly implemented for all types implementing the `Api` trait.
 #[async_trait::async_trait]
-pub trait DynApi: DynRoutable {
+pub unsafe trait DynApi: DynRoutable {
+    /// Wrapper for the `Api::respond` function, marked as unsafe because of the used of the `RouteUntypedPtr`,
+    /// the implementation internally trust the `route_ptr` to be of the valid type.
+    /// It is therefore to the caller to make sure the data backed by the pointer is of the correct type.
+    /// (lifetime should'nt be a problem, the borrow checker should track it normally)
     async unsafe fn respond<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        states: &'r StatesMap,
+        state: &'r StatesMap,
     ) -> Result<String, String>;
 }
 
 #[async_trait::async_trait]
-impl<T: Api> DynApi for T {
+unsafe impl<T: Api> DynApi for T {
     async unsafe fn respond<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        states: &'r StatesMap,
+        state: &'r StatesMap,
     ) -> Result<String, String> {
+        // trust the caller to pass down a route_ptr of the valid type.
         let route = route_ptr.cast::<T>();
-        let state = states
+        // extract requested states.
+        let state = state
             .extract::<T::State<'r>>()
+            // extract return the name of the missing ressource
             .map_err(|err| format!("Missing state {}.", err))?;
+        // execute original respond function. 
         <T as Api>::respond(*route, state)
             .await
+            // if failed return the erreur in a Debug formatted string.
             .map_err(|err| format!("{:?}", err))
     }
 }
