@@ -7,12 +7,12 @@ use super::prelude::*;
 use stonkks_traits::layout::DynLayout;
 use stonkks_traits::pages::{DynComponent, DynRenderResult};
 use stonkks_traits::pointers::*;
-use stonkks_traits::ressources::RessourceMap;
 use stonkks_traits::routes::UrlInfos;
+use stonkks_traits::states::StatesMap;
 
 pub struct Server {
     inner: AppInner,
-    ressources: RessourceMap,
+    states: StatesMap,
     api: ApiRoutes,
 }
 
@@ -23,12 +23,8 @@ pub enum Response {
 }
 
 impl Server {
-    pub(crate) fn new(inner: AppInner, api: ApiRoutes, ressources: RessourceMap) -> Self {
-        Server {
-            inner,
-            api,
-            ressources,
-        }
+    pub(crate) fn new(inner: AppInner, api: ApiRoutes, states: StatesMap) -> Self {
+        Server { inner, api, states }
     }
 
     fn dyn_pages(&self) -> &DynPages {
@@ -50,14 +46,14 @@ impl Server {
     pub async fn try_find_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-        ressources: &RessourceMap,
+        states: &StatesMap,
     ) -> Option<Result<(&'_ dyn DynComponent, PropsUntypedPtr), String>> {
         if let Some(page) = self.static_pages().find_static_page(url_infos) {
             return Some(Ok((page.as_dyn_component(), PropsUntypedPtr::new_unit())));
         }
         if let Some(result) = self
             .dyn_pages()
-            .find_dyn_page_and_props(url_infos, ressources)
+            .find_dyn_page_and_props(url_infos, states)
             .await
         {
             return match result {
@@ -71,9 +67,9 @@ impl Server {
     pub async fn try_render_to_string<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-        ressources: &RessourceMap,
+        states: &StatesMap,
     ) -> Option<Result<String, String>> {
-        let result = self.try_find_page_and_props(url_infos, ressources).await?;
+        let result = self.try_find_page_and_props(url_infos, states).await?;
         let (page, props) = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
@@ -122,7 +118,7 @@ impl Server {
             Some(("api", url_infos)) => {
                 // api route
                 self.api
-                    .find_and_respond(url_infos, &self.ressources)
+                    .find_and_respond(url_infos, &self.states)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Api))
@@ -130,7 +126,7 @@ impl Server {
             }
             _ => {
                 // possible page
-                self.try_render_to_string(url_infos.to_shared(), &self.ressources)
+                self.try_render_to_string(url_infos.to_shared(), &self.states)
                     .await
                     .transpose()
                     .map(|html| html.map(Response::Html))

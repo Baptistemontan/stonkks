@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use stonkks::prelude::*;
 use stonkks_traits::pages::DynBasePage;
 use stonkks_traits::pointers::*;
-use stonkks_traits::ressources::RessourceMap;
+use stonkks_traits::states::StatesMap;
 use sycamore::prelude::*;
 
 struct MyLayout;
@@ -78,10 +78,10 @@ impl Routable for MyDynPage {
 #[async_trait]
 impl DynPage for MyDynPage {
     type Err<'url> = ();
-    type Ressource<'r> = ();
+    type State<'r> = ();
     async fn get_server_props<'url, 'r>(
         route: Self::Route<'url>,
-        _ressource: (),
+        _state: (),
     ) -> Result<Self::Props, ()> {
         Ok(MyProps(route.0.to_string()))
     }
@@ -112,10 +112,10 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
-    let ressources = RessourceMap::default();
+    let states = StatesMap::default();
 
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &ressources)
+        .try_render_to_string(url_infos.to_shared(), &states)
         .await
         .unwrap()
         .unwrap();
@@ -160,10 +160,10 @@ async fn test_layout() {
 
     let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
-    let ressources = RessourceMap::default();
+    let states = StatesMap::default();
 
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &ressources)
+        .try_render_to_string(url_infos.to_shared(), &states)
         .await
         .unwrap()
         .unwrap();
@@ -183,10 +183,10 @@ async fn test_default_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    let ressources = RessourceMap::default();
+    let states = StatesMap::default();
 
     assert!(server
-        .try_render_to_string(url_infos.to_shared(), &ressources)
+        .try_render_to_string(url_infos.to_shared(), &states)
         .await
         .is_none());
 
@@ -208,10 +208,10 @@ async fn test_custom_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    let ressources = RessourceMap::default();
+    let states = StatesMap::default();
 
     assert!(server
-        .try_render_to_string(url_infos.to_shared(), &ressources)
+        .try_render_to_string(url_infos.to_shared(), &states)
         .await
         .is_none());
 
@@ -233,10 +233,10 @@ async fn test_dyn_page_total_render() {
 
     let server = app.into_server();
 
-    let ressources = RessourceMap::default();
+    let states = StatesMap::default();
 
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &ressources)
+        .try_render_to_string(url_infos.to_shared(), &states)
         .await
         .unwrap()
         .unwrap();

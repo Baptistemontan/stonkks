@@ -10,7 +10,7 @@ use super::prelude::*;
 use stonkks_traits::api::DynApi;
 use stonkks_traits::layout::DynLayout;
 use stonkks_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
-use stonkks_traits::ressources::RessourceMap;
+use stonkks_traits::states::StatesMap;
 use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "__STONKKS_SERIALIZED_PROPS__";
@@ -24,7 +24,7 @@ pub struct App {
     dyn_pages: DynPages,
     static_pages: StaticPages,
     api: ApiRoutes,
-    ressources: RessourceMap,
+    states: StatesMap,
     layout: AppLayout,
     not_found_page: NotFound,
 }
@@ -83,18 +83,18 @@ impl App {
         self
     }
 
-    pub fn ressource<T: Any + Send + Sync>(mut self, ressource: T) -> (Self, Option<T>) {
+    pub fn state<T: Any + Send + Sync>(mut self, state: T) -> (Self, Option<T>) {
         let old = self
-            .ressources
-            .add_ressource(ressource)
+            .states
+            .add_state(state)
             .map(|old| *old.downcast::<T>().unwrap());
         (self, old)
     }
 
-    pub fn ressource_unwrap<T: Any + Send + Sync>(mut self, ressource: T) -> Self {
-        if let Some(_) = self.ressources.add_ressource(ressource) {
+    pub fn state_unwrap<T: Any + Send + Sync>(mut self, state: T) -> Self {
+        if let Some(_) = self.states.add_state(state) {
             let name = std::any::type_name::<T>();
-            panic!("This ressource was already present: {}.", name);
+            panic!("This state was already present: {}.", name);
         } else {
             self
         }
@@ -120,10 +120,10 @@ impl App {
             api,
             layout,
             not_found_page,
-            ressources,
+            states,
         } = self;
         let inner = AppInner::new(dyn_pages, static_pages, layout, not_found_page);
-        Server::new(inner, api, ressources)
+        Server::new(inner, api, states)
     }
 }
 

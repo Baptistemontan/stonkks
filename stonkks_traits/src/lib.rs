@@ -3,8 +3,8 @@ pub mod layout;
 pub mod pages;
 pub mod pointers;
 pub mod props;
-pub mod ressources;
 pub mod routes;
+pub mod states;
 
 pub mod predule {
     use super::*;
@@ -14,6 +14,6 @@ pub mod predule {
         Component, ComponentReactiveProps, DynPage, NotFoundPage, NotFoundPageProps, Page,
     };
     pub use props::{IntoProps, Props, ReactiveProps};
-    pub use ressources::Ressource;
     pub use routes::{OwnedUrlInfos, Routable, Route, UrlInfos};
+    pub use states::State;
 }

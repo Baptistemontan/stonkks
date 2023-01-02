@@ -3,9 +3,9 @@ use std::fmt::Debug;
 use async_trait::async_trait;
 use sycamore::prelude::*;
 
-use crate::ressources::ExtractRessources;
-use crate::ressources::RessourceMap;
 use crate::routes::DynRoutable;
+use crate::states::ExtractState;
+use crate::states::StatesMap;
 
 use super::pointers::*;
 use super::predule::*;
@@ -149,10 +149,10 @@ impl<T: Page> DynBasePage for T {
 #[async_trait]
 pub trait DynPage: Page + Sync {
     type Err<'url>: Debug;
-    type Ressource<'r>: ExtractRessources<'r>;
+    type State<'r>: ExtractState<'r>;
     async fn get_server_props<'url, 'r>(
         route: Self::Route<'url>,
-        ressources: Self::Ressource<'r>,
+        states: Self::State<'r>,
     ) -> Result<Self::Props, Self::Err<'url>>;
 }
 
@@ -161,7 +161,7 @@ pub trait DynPageDyn: DynBasePage {
     async unsafe fn get_server_props<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &'r RessourceMap,
+        states: &'r StatesMap,
     ) -> Result<PropsUntypedPtr, String>;
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
@@ -171,13 +171,13 @@ impl<T: DynPage> DynPageDyn for T {
     async unsafe fn get_server_props<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &'r RessourceMap,
+        states: &'r StatesMap,
     ) -> Result<PropsUntypedPtr, String> {
         let route = route_ptr.cast::<T>();
-        let ressource = ressources
-            .extract::<T::Ressource<'r>>()
-            .map_err(|err| format!("Missing ressource {}.", err))?;
-        let props_result = <T as DynPage>::get_server_props(*route, ressource).await;
+        let state = states
+            .extract::<T::State<'r>>()
+            .map_err(|err| format!("Missing state {}.", err))?;
+        let props_result = <T as DynPage>::get_server_props(*route, state).await;
         match props_result {
             Ok(props) => Ok(PropsUntypedPtr::new::<T>(props)),
             Err(err) => Err(format!("{:?}", err)),
