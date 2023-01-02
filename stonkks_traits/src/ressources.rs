@@ -1,13 +1,13 @@
 use std::{
     any::{Any, TypeId},
-    collections::HashMap,
+    collections::HashMap, ops::Deref,
 };
 
 #[derive(Default)]
 pub struct RessourceMap(HashMap<TypeId, Box<dyn Any + Send + Sync>>);
 
 impl RessourceMap {
-    pub fn extract<T: ExtractRessources>(&self) -> Result<T::Output<'_>, &'static str> {
+    pub fn extract<'a, T: ExtractRessources<'a>>(&'a self) -> Result<T, &'static str> {
         T::extract(self)
     }
 
@@ -30,9 +30,8 @@ impl RessourceMap {
     }
 }
 
-pub trait ExtractRessources {
-    type Output<'a>: Send + Sync;
-    fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str>;
+pub trait ExtractRessources<'r>: Sized + Send {
+    fn extract(ressources: &'r RessourceMap) -> Result<Self, &'static str>;
 }
 
 pub struct Ressource<T>(pub T);
@@ -41,26 +40,28 @@ pub trait AnyRessource: Any + Send + Sync {}
 
 impl<T: Send + Sync + Any> AnyRessource for T {}
 
-impl<T: ExtractRessources> ExtractRessources for Ressource<T> {
-    type Output<'a> = Ressource<<T as ExtractRessources>::Output<'a>>;
+impl<T> Deref for Ressource<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
-    fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+impl<'r, T: ExtractRessources<'r>> ExtractRessources<'r> for Ressource<T> {
+
+    fn extract(ressources: &'r RessourceMap) -> Result<Self, &'static str> {
         T::extract(ressources).map(Ressource)
     }
 }
 
-impl ExtractRessources for () {
-    type Output<'a> = ();
-
-    fn extract<'a>(_ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+impl<'r> ExtractRessources<'r> for () {
+    fn extract(_ressources: &'r RessourceMap) -> Result<Self, &'static str> {
         Ok(())
     }
 }
 
-impl<T: AnyRessource> ExtractRessources for (T,) {
-    type Output<'a> = &'a T;
-
-    fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+impl<'r, T: AnyRessource> ExtractRessources<'r> for &'r T {
+    fn extract<'a>(ressources: &'r RessourceMap) -> Result<Self, &'static str> {
         ressources.get_ressource::<T>()
     }
 }
@@ -73,9 +74,8 @@ mod impl_macro {
     // just modified to implement this.
     macro_rules! tuple_impls {
         // Stopping criteria (1-ary tuple)
-        // (T, ) is implemented differently (return T instead of (T, ))
         ($T:ident) => {
-            // tuple_impls!(@impl $T);
+            tuple_impls!(@impl $T);
         };
         // Running criteria (n-ary tuple, with n >= 2)
         ($T:ident $( $U:ident )+) => {
@@ -84,9 +84,8 @@ mod impl_macro {
         };
         // "Private" internal implementation
         (@impl $( $T:ident )+) => {
-            impl<$($T:AnyRessource),+> ExtractRessources for ($($T,)+) {
-                type Output<'a> = ($(&'a $T,)+);
-                fn extract<'a>(ressources: &'a RessourceMap) -> Result<Self::Output<'a>, &'static str> {
+            impl<'r, $($T:AnyRessource),+> ExtractRessources<'r> for ($(&'r $T,)+) {
+                fn extract(ressources: &'r RessourceMap) -> Result<Self, &'static str> {
                     Ok(($(ressources.get_ressource::<$T>()?,)+))
                 }
             }

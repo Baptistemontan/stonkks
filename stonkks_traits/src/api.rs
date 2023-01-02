@@ -16,34 +16,32 @@ use super::routes::DynRoutable;
 #[async_trait::async_trait]
 pub trait Api: Routable {
     type Err<'url>: Debug;
-    type Ressource: ExtractRessources;
+    type Ressource<'r>: ExtractRessources<'r>;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        ressources: ApiExtractedRessource<'r, Self>,
+        ressources: Self::Ressource<'r>,
     ) -> Result<String, Self::Err<'url>>;
 }
 
-pub type ApiExtractedRessource<'a, T> = <<T as Api>::Ressource as ExtractRessources>::Output<'a>;
-
 #[async_trait::async_trait]
 pub trait DynApi: DynRoutable {
-    async unsafe fn respond<'url>(
+    async unsafe fn respond<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &RessourceMap,
+        ressources: &'r RessourceMap,
     ) -> Result<String, String>;
 }
 
 #[async_trait::async_trait]
 impl<T: Api> DynApi for T {
-    async unsafe fn respond<'url>(
+    async unsafe fn respond<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &RessourceMap,
+        ressources: &'r RessourceMap,
     ) -> Result<String, String> {
         let route = route_ptr.cast::<T>();
         let ressource = ressources
-            .extract::<T::Ressource>()
+            .extract::<T::Ressource<'r>>()
             .map_err(|err| format!("Missing ressource {}.", err))?;
         <T as Api>::respond(*route, ressource)
             .await

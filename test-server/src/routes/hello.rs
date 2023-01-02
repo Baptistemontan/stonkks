@@ -1,4 +1,4 @@
-use std::sync::atomic::AtomicUsize;
+use std::{sync::atomic::AtomicUsize, ops::Deref};
 
 use stonkks::prelude::*;
 
@@ -23,13 +23,21 @@ impl<'a> Route<'a> for HelloRoute<'a> {
 #[derive(Debug)]
 pub struct MyRessource(pub AtomicUsize);
 
+impl Deref for MyRessource {
+    type Target = AtomicUsize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 #[async_trait::async_trait]
 impl Api for Hello {
     type Err<'a> = &'a str;
-    type Ressource = Ressource<(MyRessource,)>;
+    type Ressource<'r> = Ressource<&'r MyRessource>;
     async fn respond<'url, 'r>(
         route: Self::Route<'url>,
-        Ressource(MyRessource(counter)): Ressource<&'r MyRessource>,
+        counter: Ressource<&'r MyRessource>,
     ) -> Result<String, &'url str> {
         let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         Ok(format!(

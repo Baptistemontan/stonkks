@@ -146,39 +146,36 @@ impl<T: Page> DynBasePage for T {
     }
 }
 
-pub type PropsExtractedRessource<'a, T> =
-    <<T as DynPage>::Ressource as ExtractRessources>::Output<'a>;
-
 #[async_trait]
 pub trait DynPage: Page + Sync {
     type Err<'url>: Debug;
-    type Ressource: ExtractRessources;
+    type Ressource<'r>: ExtractRessources<'r>;
     async fn get_server_props<'url, 'r>(
         route: Self::Route<'url>,
-        ressources: PropsExtractedRessource<'r, Self>,
+        ressources: Self::Ressource<'r>,
     ) -> Result<Self::Props, Self::Err<'url>>;
 }
 
 #[async_trait]
 pub trait DynPageDyn: DynBasePage {
-    async unsafe fn get_server_props<'url>(
+    async unsafe fn get_server_props<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &RessourceMap,
+        ressources: &'r RessourceMap,
     ) -> Result<PropsUntypedPtr, String>;
     fn as_dyn_base_page(&self) -> &dyn DynBasePage;
 }
 
 #[async_trait]
 impl<T: DynPage> DynPageDyn for T {
-    async unsafe fn get_server_props<'url>(
+    async unsafe fn get_server_props<'url, 'r>(
         &self,
         route_ptr: RouteUntypedPtr<'url>,
-        ressources: &RessourceMap,
+        ressources: &'r RessourceMap,
     ) -> Result<PropsUntypedPtr, String> {
         let route = route_ptr.cast::<T>();
         let ressource = ressources
-            .extract::<T::Ressource>()
+            .extract::<T::Ressource<'r>>()
             .map_err(|err| format!("Missing ressource {}.", err))?;
         let props_result = <T as DynPage>::get_server_props(*route, ressource).await;
         match props_result {

@@ -78,7 +78,7 @@ impl Routable for MyDynPage {
 #[async_trait]
 impl DynPage for MyDynPage {
     type Err<'url> = ();
-    type Ressource = ();
+    type Ressource<'r> = ();
     async fn get_server_props<'url, 'r>(
         route: Self::Route<'url>,
         _ressource: (),
