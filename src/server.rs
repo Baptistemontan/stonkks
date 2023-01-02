@@ -11,6 +11,10 @@ use stonkks_core::response::Response;
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
 
+const API_ROUTE_SEGMENT: &str = "api";
+const STATIC_FILES_ROUTE_SEGMENT: &str = "public";
+const PROPS_ROUTE_SEGMENT: &str = "props";
+
 pub struct Server {
     inner: AppInner,
     states: StatesMap,
@@ -47,14 +51,13 @@ impl Server {
     pub async fn try_find_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-        states: &StatesMap,
     ) -> Option<Result<(&'_ dyn DynComponent, PropsUntypedPtr), String>> {
         if let Some(page) = self.static_pages().find_static_page(url_infos) {
             return Some(Ok((page.as_dyn_component(), PropsUntypedPtr::new_unit())));
         }
         if let Some(result) = self
             .dyn_pages()
-            .find_dyn_page_and_props(url_infos, states)
+            .find_dyn_page_and_props(url_infos, &self.states)
             .await
         {
             return match result {
@@ -68,9 +71,8 @@ impl Server {
     pub async fn try_render_to_string<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-        states: &StatesMap,
     ) -> Option<Result<String, String>> {
-        let result = self.try_find_page_and_props(url_infos, states).await?;
+        let result = self.try_find_page_and_props(url_infos).await?;
         let (page, props) = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
@@ -109,14 +111,34 @@ impl Server {
         ))
     }
 
+    pub async fn try_find_props<'a, 'url>(
+        &self,
+        url_infos: UrlInfos<'a, 'url>,
+    ) -> Option<Result<String, String>> {
+        let result = self.try_find_page_and_props(url_infos).await?;
+        let (page, props) = match result {
+            Ok(page_and_props) => page_and_props,
+            Err(err) => return Some(Err(err)),
+        };
+        let serialize_result = unsafe { page.serialize_props(&props) };
+        Some(serialize_result.map_err(|err| format!("{:?}", err)))
+    }
+
     pub async fn respond<'url>(
         &self,
         url_infos: &OwnedUrlInfos<'url>,
     ) -> Option<Result<ServerResponse, String>> {
         match url_infos.to_shared_shifted() {
-            Some(("props", _)) => None,  // props API
-            Some(("public", _)) => None, // static file
-            Some(("api", url_infos)) => {
+            Some((PROPS_ROUTE_SEGMENT, url_infos)) => {
+                // props API
+                self.try_find_props(url_infos)
+                    .await
+                    .transpose()
+                    .map(|props| props.map(ServerResponse::Props))
+                    .transpose()
+            }
+            Some((STATIC_FILES_ROUTE_SEGMENT, _)) => None, // static file
+            Some((API_ROUTE_SEGMENT, url_infos)) => {
                 // api route
                 self.api
                     .find_and_respond(url_infos, &self.states)
@@ -127,7 +149,7 @@ impl Server {
             }
             _ => {
                 // possible page
-                self.try_render_to_string(url_infos.to_shared(), &self.states)
+                self.try_render_to_string(url_infos.to_shared())
                     .await
                     .transpose()
                     .map(|html| html.map(ServerResponse::Html))

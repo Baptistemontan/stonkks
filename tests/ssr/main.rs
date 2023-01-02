@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use stonkks::prelude::*;
 use stonkks_core::pages::DynBasePage;
 use stonkks_core::pointers::*;
-use stonkks_core::states::StatesMap;
 use sycamore::prelude::*;
 
 struct MyLayout;
@@ -112,10 +111,8 @@ async fn test_dyn_page() {
 
     let server = app.into_server();
 
-    let states = StatesMap::default();
-
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &states)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
@@ -160,10 +157,8 @@ async fn test_layout() {
 
     let url_infos = OwnedUrlInfos::parse_from_url(&url);
 
-    let states = StatesMap::default();
-
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &states)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
@@ -183,10 +178,8 @@ async fn test_default_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    let states = StatesMap::default();
-
     assert!(server
-        .try_render_to_string(url_infos.to_shared(), &states)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .is_none());
 
@@ -208,10 +201,8 @@ async fn test_custom_not_found() {
 
     let url_infos = OwnedUrlInfos::parse_from_url("absolutely_not_index");
 
-    let states = StatesMap::default();
-
     assert!(server
-        .try_render_to_string(url_infos.to_shared(), &states)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .is_none());
 
@@ -233,10 +224,8 @@ async fn test_dyn_page_total_render() {
 
     let server = app.into_server();
 
-    let states = StatesMap::default();
-
     let rendered_html = server
-        .try_render_to_string(url_infos.to_shared(), &states)
+        .try_render_to_string(url_infos.to_shared())
         .await
         .unwrap()
         .unwrap();
