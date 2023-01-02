@@ -77,16 +77,16 @@ impl Handler for MyServer {
                     Err(status) => Outcome::Failure(status),
                 }
             }
-            Some(Err(err)) => {
-                error_!("An error occured at {} : {}", url.url(), err);
-                Outcome::Failure(Status::InternalServerError)
-            }
             Some(Ok(StonkksResponse::Props(props))) => {
                 let response = (RocketContentType::JSON, props).respond_to(request);
                 match response {
                     Ok(rep) => Outcome::Success(rep),
                     Err(status) => Outcome::Failure(status),
                 }
+            }
+            Some(Err(err)) => {
+                error_!("An error occured at {} : {}", url.url(), err);
+                Outcome::Failure(Status::InternalServerError)
             }
             None => Outcome::Forward(data),
         }
