@@ -144,7 +144,7 @@ impl Server {
                     .find_and_respond(url_infos, &self.states)
                     .await
                     .transpose()
-                    .map(|html| html.map(ServerResponse::Api))
+                    .map(|response| response.map(ServerResponse::Api))
                     .transpose()
             }
             _ => {
