@@ -9,7 +9,7 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-stonkks_traits = { path = "../stonkks_traits" }
+stonkks-core = { path = "../stonkks-core" }
 nom = "7.1.1"
 proc-macro2 = "1.0.47"
 quote = "1.0.21"

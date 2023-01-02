@@ -1210,12 +1210,22 @@ dependencies = [
  "js-sys",
  "serde",
  "serde_json",
+ "stonkks-core",
  "stonkks_macro",
- "stonkks_traits",
  "sycamore",
  "tokio",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "stonkks-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "sycamore",
 ]
 
 [[package]]
@@ -1225,18 +1235,8 @@ dependencies = [
  "nom",
  "proc-macro2",
  "quote",
- "stonkks_traits",
+ "stonkks-core",
  "syn",
-]
-
-[[package]]
-name = "stonkks_traits"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "serde",
- "serde_json",
- "sycamore",
 ]
 
 [[package]]

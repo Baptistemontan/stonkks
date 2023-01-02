@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use stonkks::prelude::*;
-use stonkks_traits::pages::DynBasePage;
-use stonkks_traits::pointers::*;
-use stonkks_traits::states::StatesMap;
+use stonkks_core::pages::DynBasePage;
+use stonkks_core::pointers::*;
+use stonkks_core::states::StatesMap;
 use sycamore::prelude::*;
 
 struct MyLayout;

@@ -4,11 +4,11 @@ use crate::pages::StaticPages;
 
 use super::pages::DynPages;
 use super::prelude::*;
-use stonkks_traits::layout::DynLayout;
-use stonkks_traits::pages::{DynComponent, DynRenderResult};
-use stonkks_traits::pointers::*;
-use stonkks_traits::routes::UrlInfos;
-use stonkks_traits::states::StatesMap;
+use stonkks_core::layout::DynLayout;
+use stonkks_core::pages::{DynComponent, DynRenderResult};
+use stonkks_core::pointers::*;
+use stonkks_core::routes::UrlInfos;
+use stonkks_core::states::StatesMap;
 
 pub struct Server {
     inner: AppInner,

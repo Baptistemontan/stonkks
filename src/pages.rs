@@ -1,8 +1,8 @@
 use super::prelude::*;
-use stonkks_traits::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
-use stonkks_traits::pointers::*;
-use stonkks_traits::routes::UrlInfos;
-use stonkks_traits::states::StatesMap;
+use stonkks_core::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
+use stonkks_core::pointers::*;
+use stonkks_core::routes::UrlInfos;
+use stonkks_core::states::StatesMap;
 
 type BoxedDynPage = Box<dyn DynPageDyn>;
 type BoxedStaticPage = Box<dyn DynStaticPage>;

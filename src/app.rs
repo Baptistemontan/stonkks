@@ -7,10 +7,10 @@ use crate::pages::StaticPages;
 use super::default::{AppLayout, NotFound};
 use super::pages::DynPages;
 use super::prelude::*;
-use stonkks_traits::api::DynApi;
-use stonkks_traits::layout::DynLayout;
-use stonkks_traits::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
-use stonkks_traits::states::StatesMap;
+use stonkks_core::api::DynApi;
+use stonkks_core::layout::DynLayout;
+use stonkks_core::pages::{DynComponent, DynPageDyn, DynStaticPage, StaticPage};
+use stonkks_core::states::StatesMap;
 use sycamore::prelude::*;
 
 pub const SERIALIZED_PROPS_KEY: &str = "__STONKKS_SERIALIZED_PROPS__";

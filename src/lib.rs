@@ -10,7 +10,7 @@ pub mod prelude {
     pub use app::App;
     pub use client::Client;
     pub use server::{Response, Server};
-    pub use stonkks_traits::predule::*;
+    pub use stonkks_core::predule::*;
 }
 
 // TODO:

@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
 use super::prelude::*;
-use stonkks_traits::layout::DynLayout;
-use stonkks_traits::pages::DynComponent;
+use stonkks_core::layout::DynLayout;
+use stonkks_core::pages::DynComponent;
 use sycamore::prelude::*;
 
 struct DefaultLayout;

@@ -7,10 +7,10 @@ use super::pages::DynPages;
 use super::prelude::*;
 use js_sys::{JsString, Object};
 use serde_json::Error;
-use stonkks_traits::layout::DynLayout;
-use stonkks_traits::pages::{DynBasePage, DynComponent, DynRenderResult};
-use stonkks_traits::pointers::*;
-use stonkks_traits::routes::UrlInfos;
+use stonkks_core::layout::DynLayout;
+use stonkks_core::pages::{DynBasePage, DynComponent, DynRenderResult};
+use stonkks_core::pointers::*;
+use stonkks_core::routes::UrlInfos;
 use wasm_bindgen::{throw_str, JsValue};
 use web_sys::{Element, Window};
 

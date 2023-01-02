@@ -1,8 +1,8 @@
-use stonkks_traits::api::DynApi;
-use stonkks_traits::pointers::*;
-use stonkks_traits::predule::*;
-use stonkks_traits::routes::UrlInfos;
-use stonkks_traits::states::StatesMap;
+use stonkks_core::api::DynApi;
+use stonkks_core::pointers::*;
+use stonkks_core::predule::*;
+use stonkks_core::routes::UrlInfos;
+use stonkks_core::states::StatesMap;
 
 #[derive(Default)]
 pub struct ApiRoutes(Vec<Box<dyn DynApi>>);
