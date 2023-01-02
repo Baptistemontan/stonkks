@@ -1,18 +1,15 @@
+use crate::pointers::*;
+use crate::predule::*;
+use crate::routes::DynRoutable;
+use crate::states::ExtractState;
+use crate::states::StatesMap;
 /// For now api routes just respond with a string,
 /// this will change just need to figure out the api.
 /// TODO:
 ///  - support for method type (GET, POST, ect..) (only support get rn)
 ///  - better return type
 ///  - ??
-
 use std::fmt::Debug;
-use crate::states::ExtractState;
-use crate::states::StatesMap;
-use crate::pointers::*;
-use crate::predule::*;
-use crate::routes::DynRoutable;
-
-
 
 /// Trait use to create an API route.
 #[async_trait::async_trait]
@@ -31,7 +28,7 @@ pub trait Api: Routable {
 }
 
 /// Internal trait used to implement the `Api` trait in a dynamic dispatch way.
-/// This trait is NOT meant to be implemented by hand, 
+/// This trait is NOT meant to be implemented by hand,
 /// it is automaticaly implemented for all types implementing the `Api` trait.
 #[async_trait::async_trait]
 pub unsafe trait DynApi: DynRoutable {
@@ -60,7 +57,7 @@ unsafe impl<T: Api> DynApi for T {
             .extract::<T::State<'r>>()
             // extract return the name of the missing ressource
             .map_err(|err| format!("Missing state {}.", err))?;
-        // execute original respond function. 
+        // execute original respond function.
         <T as Api>::respond(*route, state)
             .await
             // if failed return the erreur in a Debug formatted string.

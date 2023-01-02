@@ -56,8 +56,7 @@ impl<'a> RouteUntypedPtr<'a> {
     }
 }
 
-
-/// 
+///
 pub struct PropsUntypedPtr(Box<dyn Any>);
 
 impl PropsUntypedPtr {
@@ -77,7 +76,7 @@ impl PropsUntypedPtr {
     }
 
     pub unsafe fn downcast<T: Component>(self) -> Box<T::Props> {
-        // The best way would be to use `Box::downcast_unchecked` but unstable at the moment. 
+        // The best way would be to use `Box::downcast_unchecked` but unstable at the moment.
         let ptr = self.into_raw() as *mut T::Props;
         Box::from_raw(ptr)
     }

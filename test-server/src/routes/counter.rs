@@ -4,7 +4,7 @@ use crate::states::counter::CounterState;
 
 pub struct CountApi;
 
-pub struct CountRoute<'a>{
+pub struct CountRoute<'a> {
     name: &'a str,
 }
 
@@ -16,9 +16,7 @@ impl<'a> Route<'a> for CountRoute<'a> {
     fn try_from_url(url: UrlInfos<'_, 'a>) -> Option<Self> {
         let mut iter = url.segments().iter().cloned();
         match (iter.next(), iter.next()) {
-            (Some(route), Some(name)) if route == "hello" => Some(CountRoute {
-                name,
-            }),
+            (Some(route), Some(name)) if route == "hello" => Some(CountRoute { name }),
             _ => None,
         }
     }
@@ -38,9 +36,6 @@ impl Api for CountApi {
         }
 
         let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        Ok(format!(
-            "{{\"name\":\"{}\",\"count\":\"{}\"}}",
-            name, count
-        ))
+        Ok(format!("{{\"name\":\"{}\",\"count\":\"{}\"}}", name, count))
     }
 }
