@@ -93,7 +93,7 @@ impl<T: Component> DynComponent for T {
         cx: Scope,
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<DomNode> {
-        let props = props_ptr.cast::<T>();
+        let props = props_ptr.downcast::<T>();
         let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
         let body = <T as Component>::render(cx, reactive_props);
@@ -105,7 +105,7 @@ impl<T: Component> DynComponent for T {
         cx: Scope,
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<SsrNode> {
-        let props = props_ptr.cast::<T>();
+        let props = props_ptr.downcast::<T>();
         let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
         let body = <T as Component>::render(cx, reactive_props);
@@ -117,7 +117,7 @@ impl<T: Component> DynComponent for T {
         cx: Scope,
         props_ptr: PropsUntypedPtr,
     ) -> DynRenderResult<HydrateNode> {
-        let props = props_ptr.cast::<T>();
+        let props = props_ptr.downcast::<T>();
         let head = <T as Component>::render_head(cx, &props);
         let reactive_props = props.into_reactive_props(cx);
         let body = <T as Component>::render(cx, reactive_props);
@@ -173,7 +173,7 @@ impl<T: DynPage> DynPageDyn for T {
         route_ptr: RouteUntypedPtr<'url>,
         states: &'r StatesMap,
     ) -> Result<PropsUntypedPtr, String> {
-        let route = route_ptr.cast::<T>();
+        let route = route_ptr.downcast::<T>();
         let state = states
             .extract::<T::State<'r>>()
             .map_err(|err| format!("Missing state {}.", err))?;

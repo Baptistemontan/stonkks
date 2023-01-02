@@ -54,7 +54,7 @@ unsafe impl<T: Api> DynApi for T {
         state: &'r StatesMap,
     ) -> Result<String, String> {
         // trust the caller to pass down a route_ptr of the valid type.
-        let route = route_ptr.cast::<T>();
+        let route = route_ptr.downcast::<T>();
         // extract requested states.
         let state = state
             .extract::<T::State<'r>>()
