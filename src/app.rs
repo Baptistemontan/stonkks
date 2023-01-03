@@ -1,6 +1,7 @@
 use std::any::Any;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
+use std::path::PathBuf;
 
 use crate::api::ApiRoutes;
 use crate::client::Client;
@@ -27,6 +28,7 @@ pub const CLIENT_WASM_FILE_PATH: &str = "/public/stonkks_wasm_app.wasm";
 pub const CLIENT_JS_FILE_PATH: &str = "/public/stonkks_js_app.js";
 pub const ROOT_ELEMENT_ID: &str = "__STONKKS_ROOT__";
 pub const STONKKS_FOLDER_NAME: &str = ".stonkks";
+pub const STATIC_PAGES_FOLDER_NAME: &str = "pages";
 
 #[derive(Default)]
 pub struct App {
@@ -196,29 +198,50 @@ impl AppInner {
         &*self.not_found_page
     }
 
+    fn get_static_page_folder_name(hashed_page_name: u64) -> String {
+        format!("page_{:x}", hashed_page_name)
+    }
+
+    fn get_static_page_route_folder_name(hashed_route: u64) -> String {
+        format!("route_{:x}", hashed_route)
+    }
+
+    fn get_static_pages_folder_path(hashed_page_name: u64, hashed_route: u64) -> PathBuf {
+        [
+            STONKKS_FOLDER_NAME,
+            STATIC_PAGES_FOLDER_NAME,
+            &Self::get_static_page_folder_name(hashed_page_name),
+            &Self::get_static_page_route_folder_name(hashed_route),
+        ]
+        .iter()
+        .collect()
+    }
+
+    fn get_static_pages_html_path(path: &mut PathBuf) {
+        path.push("html.html");
+    }
+
+    fn get_static_pages_props_path(path: &mut PathBuf) {
+        path.push("props.json");
+    }
+
     async fn save_page(
         page: String,
-        page_name: &str,
-        route_hash: u64,
+        hashed_page_name: u64,
+        hashed_route: u64,
         serialized_props: &str,
     ) -> Result<(), std::io::Error> {
-        let mut hasher = DefaultHasher::new();
-        page_name.hash(&mut hasher);
-        let hashed_page_name = hasher.finish();
-        let dir_path = format!(
-            "./{}/page_{:x}/route_{:x}",
-            STONKKS_FOLDER_NAME, hashed_page_name, route_hash
-        );
-        fs::create_dir_all(&dir_path).await?;
-        let page_html_path = format!("{}/html.html", dir_path);
+        let mut path = Self::get_static_pages_folder_path(hashed_page_name, hashed_route);
+        fs::create_dir_all(&path).await?;
+        Self::get_static_pages_html_path(&mut path);
 
-        let mut page_html_file = fs::File::create(page_html_path).await?;
+        let mut page_html_file = fs::File::create(&path).await?;
         page_html_file.write_all(page.as_bytes()).await?;
         page_html_file.flush().await?;
+        path.pop();
+        Self::get_static_pages_props_path(&mut path);
 
-        let page_props_path = format!("{}/props.json", dir_path);
-
-        let mut page_props_file = fs::File::create(page_props_path).await?;
+        let mut page_props_file = fs::File::create(&path).await?;
         page_props_file
             .write_all(serialized_props.as_bytes())
             .await?;
@@ -231,13 +254,17 @@ impl AppInner {
         states: &StatesMap,
     ) -> Result<(), StaticGenerationError> {
         let build_routes = page.get_build_routes(states).await?;
+        let page_name = page.get_name();
+        let mut hasher = DefaultHasher::new();
+        page_name.hash(&mut hasher);
+        let hashed_page_name = hasher.finish();
         for url in build_routes {
             let url_infos = OwnedUrlInfos::parse_from_url(&url);
             let page_and_route = StaticPageAndRoute::try_match_route(page, url_infos.to_shared());
             let Some(page_and_route) = page_and_route else {
                 return Err(StaticGenerationError::RouteMismatch(format!("Route {} was provided as build route, but did not match.", url)));
             };
-            let route_hash = page_and_route.hash_route();
+            let hashed_route = page_and_route.hash_route();
             let page_and_props = page_and_route.get_props(states).await?;
             let serialized_props = page_and_props.serialize_props()?;
             let html = sycamore::render_to_string(|cx| {
@@ -249,9 +276,8 @@ impl AppInner {
                 "<!DOCTYPE html><html id=\"{}\">{}</html>",
                 ROOT_ELEMENT_ID, html
             );
-            let page_name = page.get_name();
 
-            Self::save_page(full_page, page_name, route_hash, &serialized_props).await?;
+            Self::save_page(full_page, hashed_page_name, hashed_route, &serialized_props).await?;
         }
         Ok(())
     }
@@ -270,16 +296,14 @@ impl AppInner {
 
     pub async fn get_static_page_html(
         page_name: &str,
-        route_hash: u64,
+        hashed_route: u64,
     ) -> Result<String, std::io::Error> {
         let mut hasher = DefaultHasher::new();
         page_name.hash(&mut hasher);
         let hashed_page_name = hasher.finish();
-        let page_html_path = format!(
-            "./{}/page_{:x}/route_{:x}/html.html",
-            STONKKS_FOLDER_NAME, hashed_page_name, route_hash
-        );
-        let mut page_html_file = fs::File::open(page_html_path).await?;
+        let mut path = Self::get_static_pages_folder_path(hashed_page_name, hashed_route);
+        Self::get_static_pages_html_path(&mut path);
+        let mut page_html_file = fs::File::open(path).await?;
         let mut html = String::new();
         page_html_file.read_to_string(&mut html).await?;
         Ok(html)
@@ -287,16 +311,14 @@ impl AppInner {
 
     pub async fn get_static_page_props(
         page_name: &str,
-        route_hash: u64,
+        hashed_route: u64,
     ) -> Result<String, std::io::Error> {
         let mut hasher = DefaultHasher::new();
         page_name.hash(&mut hasher);
         let hashed_page_name = hasher.finish();
-        let page_html_path = format!(
-            "./{}/page_{:x}/route_{:x}/props.json",
-            STONKKS_FOLDER_NAME, hashed_page_name, route_hash
-        );
-        let mut page_html_file = fs::File::open(page_html_path).await?;
+        let mut path = Self::get_static_pages_folder_path(hashed_page_name, hashed_route);
+        Self::get_static_pages_props_path(&mut path);
+        let mut page_html_file = fs::File::open(path).await?;
         let mut props = String::new();
         page_html_file.read_to_string(&mut props).await?;
         Ok(props)
