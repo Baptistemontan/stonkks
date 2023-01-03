@@ -4,6 +4,7 @@ mod client;
 mod default;
 mod pages;
 mod server;
+mod utils;
 
 pub mod prelude {
     use super::*;

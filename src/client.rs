@@ -2,6 +2,7 @@ use crate::app::{
     default_html_view, AppInner, ROOT_ELEMENT_ID, SERIALIZED_PROPS_KEY, STONKKS_WINDOW_OBJECT_KEY,
 };
 use crate::pages::StaticPages;
+use crate::utils::PageAndProps;
 
 use super::pages::DynPages;
 use super::prelude::*;
@@ -9,7 +10,6 @@ use js_sys::{JsString, Object};
 use serde_json::Error;
 use stonkks_core::layout::DynLayout;
 use stonkks_core::pages::{DynBasePage, DynComponent, DynRenderResult};
-use stonkks_core::pointers::*;
 use stonkks_core::routes::UrlInfos;
 use wasm_bindgen::{throw_str, JsValue};
 use web_sys::{Element, Window};
@@ -89,20 +89,19 @@ impl Client {
         &self,
         url_infos: UrlInfos<'a, 'url>,
         serialized_props: &str,
-    ) -> Result<(&'_ dyn DynComponent, PropsUntypedPtr), Error> {
+    ) -> Result<PageAndProps<'_>, Error> {
         let page = self.find_page(url_infos);
-        let props = page.deserialize_props(serialized_props)?;
-        Ok((page, props))
+        PageAndProps::deserialize(page, serialized_props)
     }
 
-    pub fn prepare_render<'url>(
+    fn prepare_render<'url>(
         &self,
         url: &'url str,
         serialized_props: &str,
-    ) -> (&dyn DynComponent, PropsUntypedPtr, Element) {
+    ) -> (PageAndProps<'_>, Element) {
         let url_infos = OwnedUrlInfos::parse_from_url(url);
         let url_infos = url_infos.to_shared();
-        let (page, props) = self
+        let page_and_props = self
             .find_page_and_props(url_infos, serialized_props)
             .expect("Error appened deserializing the props");
 
@@ -114,17 +113,17 @@ impl Client {
             .unwrap()
             .unwrap();
 
-        (page, props, root)
+        (page_and_props, root)
     }
 
     pub fn render<'url>(&self, url: &'url str, serialized_props: &str) {
-        let (page, props, root) = self.prepare_render(url, serialized_props);
+        let (page_and_props, root) = self.prepare_render(url, serialized_props);
 
         root.set_inner_html("");
 
         sycamore::render_to(
             |cx| {
-                let DynRenderResult { body, head } = unsafe { page.render_client(cx, props) };
+                let DynRenderResult { body, head } = page_and_props.render_client(cx);
                 let body = self.layout().render_client(cx, body);
                 default_html_view(cx, body, head, &serialized_props, false)
             },
@@ -133,11 +132,11 @@ impl Client {
     }
 
     pub fn hydrate<'url>(&self, url: &'url str, serialized_props: &str) {
-        let (page, props, root) = self.prepare_render(url, serialized_props);
+        let (page_and_props, root) = self.prepare_render(url, serialized_props);
 
         sycamore::hydrate_to(
             |cx| {
-                let DynRenderResult { body, head } = unsafe { page.hydrate(cx, props) };
+                let DynRenderResult { body, head } = page_and_props.hydrate(cx);
                 let body = self.layout().hydrate(cx, body);
                 default_html_view(cx, body, head, &serialized_props, false)
             },

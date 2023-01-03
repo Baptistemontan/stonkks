@@ -1,6 +1,7 @@
+use crate::utils::{DynPageAndRoute, PageAndProps, StaticPageAndRoute};
+
 use super::prelude::*;
 use stonkks_core::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
-use stonkks_core::pointers::*;
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
 
@@ -11,25 +12,23 @@ type BoxedStaticPage = Box<dyn DynStaticPage>;
 pub struct DynPages(Vec<BoxedDynPage>);
 
 impl DynPages {
-    pub fn find_dyn_page_and_route<'a, 'url>(
+    pub(crate) fn find_dyn_page_and_route<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-    ) -> Option<(&'_ dyn DynPageDyn, RouteUntypedPtr<'url>)> {
-        for page in &self.0 {
-            if let Some(route) = page.try_match_route(url_infos) {
-                return Some((&**page, route));
-            }
-        }
-        None
+    ) -> Option<DynPageAndRoute<'_, 'url>> {
+        self.0
+            .iter()
+            .find_map(|page| DynPageAndRoute::try_match_route(&**page, url_infos))
     }
-    pub async fn find_dyn_page_and_props<'a, 'url>(
+
+    pub(crate) async fn find_dyn_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
         states: &StatesMap,
-    ) -> Option<Result<(&'_ dyn DynPageDyn, PropsUntypedPtr), String>> {
-        let (page, route) = self.find_dyn_page_and_route(url_infos)?;
-        let props_result = unsafe { page.get_server_props(route, states).await };
-        Some(props_result.map(|props| (page, props)))
+    ) -> Option<Result<PageAndProps<'_>, String>> {
+        let page_and_route = self.find_dyn_page_and_route(url_infos)?;
+        let result = page_and_route.get_props(states).await;
+        Some(result)
     }
 
     pub fn add_page<T: DynPage>(&mut self, page: T) {
@@ -56,16 +55,13 @@ impl DynPages {
 pub struct StaticPages(Vec<BoxedStaticPage>);
 
 impl StaticPages {
-    pub fn find_static_page<'a, 'url>(
+    pub(crate) fn find_static_page<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-    ) -> Option<&'_ dyn DynStaticPage> {
-        for page in &self.0 {
-            if let Some(_) = page.try_match_route(url_infos) {
-                return Some(&**page);
-            }
-        }
-        None
+    ) -> Option<StaticPageAndRoute<'_, 'url>> {
+        self.0
+            .iter()
+            .find_map(move |page| StaticPageAndRoute::try_match_route(&**page, url_infos))
     }
 
     pub fn add_page<T: StaticPage>(&mut self, page: T) {

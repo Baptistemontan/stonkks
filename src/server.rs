@@ -1,12 +1,12 @@
 use crate::api::ApiRoutes;
 use crate::app::{default_html_view, AppInner, ROOT_ELEMENT_ID};
 use crate::pages::StaticPages;
+use crate::utils::PageAndProps;
 
 use super::pages::DynPages;
 use super::prelude::*;
 use stonkks_core::layout::DynLayout;
 use stonkks_core::pages::{DynComponent, DynRenderResult};
-use stonkks_core::pointers::*;
 use stonkks_core::response::Response;
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
@@ -28,7 +28,7 @@ pub enum ServerResponse {
 }
 
 impl Server {
-    pub(crate) fn new(inner: AppInner, api: ApiRoutes, states: StatesMap) -> Self {
+    pub fn new(inner: AppInner, api: ApiRoutes, states: StatesMap) -> Self {
         Server { inner, api, states }
     }
 
@@ -48,22 +48,19 @@ impl Server {
         self.inner.layout()
     }
 
-    pub async fn try_find_page_and_props<'a, 'url>(
+    async fn try_find_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
-    ) -> Option<Result<(&'_ dyn DynComponent, PropsUntypedPtr), String>> {
+    ) -> Option<Result<PageAndProps<'_>, String>> {
         if let Some(page) = self.static_pages().find_static_page(url_infos) {
-            return Some(Ok((page.as_dyn_component(), PropsUntypedPtr::new_unit())));
+            return Some(Ok(page.get_props()));
         }
         if let Some(result) = self
             .dyn_pages()
             .find_dyn_page_and_props(url_infos, &self.states)
             .await
         {
-            return match result {
-                Ok((page, props)) => Some(Ok((page.as_dyn_component(), props))),
-                Err(err) => Some(Err(err)),
-            };
+            return Some(result);
         }
         None
     }
@@ -73,17 +70,17 @@ impl Server {
         url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<String, String>> {
         let result = self.try_find_page_and_props(url_infos).await?;
-        let (page, props) = match result {
+        let page_and_props = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
         };
-        let serialize_result = unsafe { page.serialize_props(&props) };
+        let serialize_result = page_and_props.serialize_props();
         let serialized_props = match serialize_result {
             Ok(s) => s,
             Err(err) => return Some(Err(format!("{:?}", err))),
         };
         let html = sycamore::render_to_string(|cx| {
-            let DynRenderResult { body, head } = unsafe { page.render_server(cx, props) };
+            let DynRenderResult { body, head } = page_and_props.render_server(cx);
             let body = self.layout().render_server(cx, body);
             default_html_view(cx, body, head, &serialized_props, true)
         });
@@ -111,16 +108,16 @@ impl Server {
         ))
     }
 
-    pub async fn try_find_props<'a, 'url>(
+    async fn try_find_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<String, String>> {
         let result = self.try_find_page_and_props(url_infos).await?;
-        let (page, props) = match result {
+        let page_and_props = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
         };
-        let serialize_result = unsafe { page.serialize_props(&props) };
+        let serialize_result = page_and_props.serialize_props();
         Some(serialize_result.map_err(|err| format!("{:?}", err)))
     }
 
