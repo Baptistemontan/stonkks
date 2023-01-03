@@ -56,6 +56,7 @@ impl Component for Counter {
     }
 }
 
+#[derive(Hash)]
 pub struct CounterRoute(i32);
 
 impl<'url> Route<'url> for CounterRoute {

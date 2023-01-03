@@ -44,12 +44,20 @@ impl<'a, 'url> StaticPageAndRoute<'a, 'url> {
         Some(StaticPageAndRoute { page, route })
     }
 
-    pub fn get_props(self) -> PageAndProps<'a> {
-        let props = PropsUntypedPtr::new_unit();
-        PageAndProps {
+    pub async fn get_props(self, states: &StatesMap) -> Result<PageAndProps<'a>, String> {
+        let props = unsafe { self.page.get_props(self.route, states).await? };
+        Ok(PageAndProps {
             page: self.page.as_dyn_component(),
             props,
-        }
+        })
+    }
+
+    pub fn hash_route(&self) -> u64 {
+        unsafe { self.page.hash_route(&self.route) }
+    }
+
+    pub fn page_name(&self) -> &'static str {
+        self.page.get_name()
     }
 }
 

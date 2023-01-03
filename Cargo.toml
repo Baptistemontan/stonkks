@@ -15,6 +15,8 @@ serde_json = "1.0.91"
 web-sys = { version = "0.3.60", features = ["Location", "Window"] }
 wasm-bindgen = "0.2.83"
 js-sys = "0.3.60"
+async-fs = "1.6.0"
+futures = "0.3.25"
 
 [dev-dependencies]
 tokio = { version = "1.23.0", features = ["full"] }

@@ -5,6 +5,7 @@ use crate::states::counter::CounterState;
 
 pub struct CountApi;
 
+#[derive(Hash)]
 pub struct CountRoute<'a> {
     name: &'a str,
 }

@@ -1,4 +1,7 @@
+use std::collections::hash_map::DefaultHasher;
 use std::fmt::Debug;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use async_trait::async_trait;
 use sycamore::prelude::*;
@@ -125,7 +128,7 @@ impl<T: Component> DynComponent for T {
     }
 
     unsafe fn serialize_props(&self, props: &PropsUntypedPtr) -> Result<String, Error> {
-        let shared_props = props.shared_cast::<T>();
+        let shared_props = props.downcast_ref::<T>();
         T::serialize_props(shared_props)
     }
 
@@ -189,16 +192,78 @@ impl<T: DynPage> DynPageDyn for T {
     }
 }
 
-pub trait StaticPage: Page<Props = ()> {}
+#[async_trait]
+pub trait StaticPage: Page {
+    type RouteError: Debug;
+    type PropsError<'url>: Debug;
 
-pub trait DynStaticPage: DynBasePage {
-    fn as_dyn_base_page(&self) -> &dyn DynBasePage;
+    type RouteState<'r>: ExtractState<'r>;
+    type PropsState<'r>: ExtractState<'r>;
+
+    async fn get_props<'url, 'r>(
+        route: Self::Route<'url>,
+        states: Self::PropsState<'r>,
+    ) -> Result<Self::Props, Self::PropsError<'url>>;
+    async fn get_build_routes<'r>(
+        states: Self::RouteState<'r>,
+    ) -> Result<Vec<String>, Self::RouteError>;
 }
 
-impl<T: Page<Props = ()>> StaticPage for T {}
+#[async_trait]
+pub trait DynStaticPage: DynBasePage {
+    async unsafe fn get_props<'url, 'r>(
+        &self,
+        route_ptr: RouteUntypedPtr<'url>,
+        states: &'r StatesMap,
+    ) -> Result<PropsUntypedPtr, String>;
 
+    async fn get_build_routes(&self, states: &StatesMap) -> Result<Vec<String>, String>;
+
+    fn as_dyn_base_page(&self) -> &dyn DynBasePage;
+
+    unsafe fn hash_route<'url>(&self, route: &RouteUntypedPtr<'url>) -> u64;
+
+    fn get_name(&self) -> &'static str;
+}
+
+#[async_trait]
 impl<T: StaticPage> DynStaticPage for T {
+    async unsafe fn get_props<'url, 'r>(
+        &self,
+        route_ptr: RouteUntypedPtr<'url>,
+        states: &'r StatesMap,
+    ) -> Result<PropsUntypedPtr, String> {
+        let route = route_ptr.downcast::<T>();
+        let state = states
+            .extract::<T::PropsState<'r>>()
+            .map_err(|err| format!("Missing state {}.", err))?;
+        let props_result = <T as StaticPage>::get_props(*route, state).await;
+        match props_result {
+            Ok(props) => Ok(PropsUntypedPtr::new::<T>(props)),
+            Err(err) => Err(format!("{:?}", err)),
+        }
+    }
+
+    async fn get_build_routes(&self, states: &'_ StatesMap) -> Result<Vec<String>, String> {
+        let states = states
+            .extract::<T::RouteState<'_>>()
+            .map_err(|err| format!("Missing state {}.", err))?;
+        let routes = <T as StaticPage>::get_build_routes(states).await;
+        routes.map_err(|err| format!("{:?}", err))
+    }
+
     fn as_dyn_base_page(&self) -> &dyn DynBasePage {
         self
+    }
+
+    unsafe fn hash_route<'url>(&self, route: &RouteUntypedPtr<'url>) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        let route = route.downcast_ref::<T>();
+        route.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn get_name(&self) -> &'static str {
+        std::any::type_name::<T>()
     }
 }

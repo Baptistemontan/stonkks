@@ -1,6 +1,7 @@
 use crate::utils::{DynPageAndRoute, PageAndProps, StaticPageAndRoute};
 
 use super::prelude::*;
+use std::hash::Hash;
 use stonkks_core::pages::{DynBasePage, DynPageDyn, DynStaticPage, StaticPage};
 use stonkks_core::routes::UrlInfos;
 use stonkks_core::states::StatesMap;
@@ -64,7 +65,10 @@ impl StaticPages {
             .find_map(move |page| StaticPageAndRoute::try_match_route(&**page, url_infos))
     }
 
-    pub fn add_page<T: StaticPage>(&mut self, page: T) {
+    pub fn add_page<T: StaticPage>(&mut self, page: T)
+    where
+        for<'a> <T as Routable>::Route<'a>: Hash,
+    {
         self.add_boxed_page(Box::new(page));
     }
 
@@ -81,5 +85,9 @@ impl StaticPages {
 
     pub fn iter_as_base_page(&self) -> impl Iterator<Item = &'_ dyn DynBasePage> {
         self.0.iter().map(|page| page.as_dyn_base_page())
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'_ dyn DynStaticPage> {
+        self.0.iter().map(|page| &**page)
     }
 }

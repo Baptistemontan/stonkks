@@ -25,6 +25,7 @@ impl Layout for MyLayout {
 
 struct MyDynPage;
 
+#[derive(Hash)]
 struct MyRoute<'a>(&'a str);
 
 impl<'a> Route<'a> for MyRoute<'a> {

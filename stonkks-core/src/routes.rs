@@ -1,8 +1,11 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 
 use super::pointers::*;
 
-pub trait Route<'url>: Sized + Send + 'url {
+pub trait Route<'url>: Sized + Send + 'url + Hash {
+    // the Hash trait bound is only needed for Static pages, but contraining it later
+    // on the Static page trait is not possible currently.
+
     fn try_from_url(url: UrlInfos<'_, 'url>) -> Option<Self>;
 }
 

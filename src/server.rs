@@ -1,5 +1,5 @@
 use crate::api::ApiRoutes;
-use crate::app::{default_html_view, AppInner, ROOT_ELEMENT_ID};
+use crate::app::{default_html_view, AppInner, StaticGenerationError, ROOT_ELEMENT_ID};
 use crate::pages::StaticPages;
 use crate::utils::PageAndProps;
 
@@ -48,28 +48,52 @@ impl Server {
         self.inner.layout()
     }
 
-    async fn try_find_page_and_props<'a, 'url>(
+    async fn try_find_dyn_page_and_props<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<PageAndProps<'_>, String>> {
-        if let Some(page) = self.static_pages().find_static_page(url_infos) {
-            return Some(Ok(page.get_props()));
-        }
-        if let Some(result) = self
-            .dyn_pages()
+        self.dyn_pages()
             .find_dyn_page_and_props(url_infos, &self.states)
             .await
-        {
-            return Some(result);
+    }
+
+    async fn try_find_static_page_html<'a, 'url>(
+        &self,
+        url_infos: UrlInfos<'a, 'url>,
+    ) -> Option<Result<String, String>> {
+        let page = self.static_pages().find_static_page(url_infos)?;
+        let route_hash = page.hash_route();
+        let page_name = page.page_name();
+        let result = AppInner::get_static_page_html(page_name, route_hash).await;
+        match result {
+            Ok(html) => Some(Ok(html)),
+            Err(err) => Some(Err(format!("{:?}", err))),
         }
-        None
+    }
+
+    async fn try_find_static_page_props<'a, 'url>(
+        &self,
+        url_infos: UrlInfos<'a, 'url>,
+    ) -> Option<Result<String, String>> {
+        let page = self.static_pages().find_static_page(url_infos)?;
+        let route_hash = page.hash_route();
+        let page_name = page.page_name();
+        let result = AppInner::get_static_page_props(page_name, route_hash).await;
+        match result {
+            Ok(props) => Some(Ok(props)),
+            Err(err) => Some(Err(format!("{:?}", err))),
+        }
     }
 
     pub async fn try_render_to_string<'a, 'url>(
         &self,
         url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<String, String>> {
-        let result = self.try_find_page_and_props(url_infos).await?;
+        let static_page = self.try_find_static_page_html(url_infos).await;
+        if let Some(result) = static_page {
+            return Some(result);
+        }
+        let result = self.try_find_dyn_page_and_props(url_infos).await?;
         let page_and_props = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
@@ -112,7 +136,10 @@ impl Server {
         &self,
         url_infos: UrlInfos<'a, 'url>,
     ) -> Option<Result<String, String>> {
-        let result = self.try_find_page_and_props(url_infos).await?;
+        if let Some(result) = self.try_find_static_page_props(url_infos).await {
+            return Some(result);
+        }
+        let result = self.try_find_dyn_page_and_props(url_infos).await?;
         let page_and_props = match result {
             Ok(page_and_props) => page_and_props,
             Err(err) => return Some(Err(err)),
@@ -153,5 +180,9 @@ impl Server {
                     .transpose()
             }
         }
+    }
+
+    pub async fn generate_static_pages(&self) -> Result<(), StaticGenerationError> {
+        self.inner.generate_static_pages(&self.states).await
     }
 }

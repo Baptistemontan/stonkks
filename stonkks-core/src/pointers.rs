@@ -35,6 +35,11 @@ impl<'a> UntypedPtr<'a> {
     pub fn into_raw(self) -> *mut dyn LifetimedAny<'a> {
         Box::into_raw(self.0)
     }
+
+    pub unsafe fn downcast_ref<T: LifetimedAny<'a>>(&self) -> &T {
+        let ptr = self.0.as_ref() as *const _ as *const T;
+        unsafe { &*ptr }
+    }
 }
 
 /// Wrapper for moving the `Route` of a `Routable` type in an untyped way but sill allowing it
@@ -54,10 +59,14 @@ impl<'a> RouteUntypedPtr<'a> {
     pub unsafe fn downcast<T: Routable>(self) -> Box<T::Route<'a>> {
         self.0.downcast()
     }
+
+    pub unsafe fn downcast_ref<T: Routable>(&self) -> &T::Route<'a> {
+        self.0.downcast_ref()
+    }
 }
 
 ///
-pub struct PropsUntypedPtr(Box<dyn Any>);
+pub struct PropsUntypedPtr(Box<dyn Any + Send>);
 
 impl PropsUntypedPtr {
     pub fn new<T: Component>(props: T::Props) -> Self {
@@ -85,7 +94,7 @@ impl PropsUntypedPtr {
         Box::into_raw(self.0)
     }
 
-    pub unsafe fn shared_cast<T: Component>(&self) -> &T::Props {
+    pub unsafe fn downcast_ref<T: Component>(&self) -> &T::Props {
         // `Box::downcast_ref_unchecked` would be more suited but unstable at the moment.
         let ptr = self.0.as_ref() as *const _ as *const T::Props;
         unsafe { &*ptr }

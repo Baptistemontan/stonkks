@@ -8,7 +8,6 @@ use std::{ops::Deref, sync::Arc};
 use rocket::{
     fs::{relative, FileServer},
     http::{ContentType as RocketContentType, Method, Status},
-    launch,
     outcome::Outcome,
     response::Responder,
     route::Handler,
@@ -58,6 +57,7 @@ impl Handler for MyServer {
         request: &'r Request<'_>,
         data: Data<'r>,
     ) -> Outcome<Response<'r>, Status, Data<'r>> {
+        let _test = Test::new();
         let url = Uri::from_request(request);
         let result = self.0.respond(&url).await;
         match result {
@@ -122,17 +122,38 @@ impl rocket::catcher::Handler for NotFound {
     }
 }
 
-#[launch]
-fn rocket() -> _ {
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     let state = CounterState::default();
     let app = get_app().state_unwrap(state).api(CountApi).into_server();
 
+    app.generate_static_pages().await.unwrap();
+
     let app = Arc::new(app);
     let server = MyServer(Arc::clone(&app));
+
     let not_found = NotFound(app);
     let not_found_catcher = Catcher::new(404, not_found);
-    rocket::build()
+    let _rocket = rocket::build()
         .mount("/public", FileServer::from(relative!("static")))
         .mount("/", server)
         .register("/", [not_found_catcher])
+        .launch()
+        .await?;
+    Ok(())
+}
+
+struct Test(std::time::Instant);
+
+impl Test {
+    fn new() -> Self {
+        Test(std::time::Instant::now())
+    }
+}
+
+impl Drop for Test {
+    fn drop(&mut self) {
+        let elapsed = self.0.elapsed();
+        println!("ELAPSED: {:?}", elapsed);
+    }
 }

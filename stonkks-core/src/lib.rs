@@ -13,6 +13,7 @@ pub mod predule {
     pub use layout::Layout;
     pub use pages::{
         Component, ComponentReactiveProps, DynPage, NotFoundPage, NotFoundPageProps, Page,
+        StaticPage,
     };
     pub use props::{IntoProps, Props, ReactiveProps};
     pub use response::{ContentType, IntoResponse, Json, Response};
